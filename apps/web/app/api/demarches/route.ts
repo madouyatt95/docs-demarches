@@ -223,85 +223,91 @@ export async function POST(request: NextRequest) {
 
                     console.log('[Auto-link] Looking for categories:', [...new Set(categoryIds)]);
 
-                    if (categoryIds.length > 0) {
-                        // Find existing documents with matching categories
-                        const { data: existingDocs, error: docsError } = await getSupabase()
-                            .from('documents')
-                            .select('id, categoryId, title')
-                            .in('categoryId', [...new Set(categoryIds)])
-                            .eq('userId', 'demo_user');
+                    // Fetch ALL user documents (simpler, more reliable than .in())
+                    const { data: allDocs, error: docsError } = await getSupabase()
+                        .from('documents')
+                        .select('id, categoryId, title')
+                        .eq('userId', 'demo_user');
 
-                        console.log('[Auto-link] Found documents:', existingDocs?.length || 0, docsError || '');
+                    console.log('[Auto-link] Total user docs:', allDocs?.length || 0);
 
-                        if (existingDocs && existingDocs.length > 0) {
-                            // Build reverse map: category -> document
-                            const categoryToDoc: Record<string, string> = {};
-                            existingDocs.forEach(doc => {
-                                if (doc.categoryId) {
-                                    categoryToDoc[doc.categoryId] = doc.id;
-                                    console.log(`[Auto-link] Mapped ${doc.categoryId} -> ${doc.title}`);
-                                }
-                            });
+                    // Filter to matching categories
+                    const uniqueCats = [...new Set(categoryIds)];
+                    const existingDocs = allDocs?.filter(doc =>
+                        doc.categoryId && uniqueCats.includes(doc.categoryId)
+                    ) || [];
 
-                            // Update steps with matching documents
-                            let linkedCount = 0;
-                            for (const step of steps) {
-                                if (!step.requiredDocumentType) continue;
+                    console.log('[Auto-link] Matching docs:', existingDocs.length, docsError || '');
 
-                                const matchingCategories = typeToCategoryMap[step.requiredDocumentType] || [];
-                                for (const catId of matchingCategories) {
-                                    if (categoryToDoc[catId]) {
-                                        const { error: updateError } = await getSupabase()
-                                            .from('demarche_steps')
-                                            .update({
-                                                documentId: categoryToDoc[catId],
-                                                isCompleted: true,
-                                                completedAt: new Date().toISOString(),
-                                            })
-                                            .eq('id', step.id);
+                    if (existingDocs && existingDocs.length > 0) {
+                        // Build reverse map: category -> document
+                        const categoryToDoc: Record<string, string> = {};
+                        existingDocs.forEach(doc => {
+                            if (doc.categoryId) {
+                                categoryToDoc[doc.categoryId] = doc.id;
+                                console.log(`[Auto-link] Mapped ${doc.categoryId} -> ${doc.title}`);
+                            }
+                        });
 
-                                        if (!updateError) {
-                                            linkedCount++;
-                                            console.log(`[Auto-link] ✓ Linked doc to step "${step.title}"`);
-                                        } else {
-                                            console.log(`[Auto-link] ✗ Failed to link step:`, updateError);
-                                        }
-                                        break;
+                        // Update steps with matching documents
+                        let linkedCount = 0;
+                        for (const step of steps) {
+                            if (!step.requiredDocumentType) continue;
+
+                            const matchingCategories = typeToCategoryMap[step.requiredDocumentType] || [];
+                            for (const catId of matchingCategories) {
+                                if (categoryToDoc[catId]) {
+                                    const { error: updateError } = await getSupabase()
+                                        .from('demarche_steps')
+                                        .update({
+                                            documentId: categoryToDoc[catId],
+                                            isCompleted: true,
+                                            completedAt: new Date().toISOString(),
+                                        })
+                                        .eq('id', step.id);
+
+                                    if (!updateError) {
+                                        linkedCount++;
+                                        console.log(`[Auto-link] ✓ Linked doc to step "${step.title}"`);
+                                    } else {
+                                        console.log(`[Auto-link] ✗ Failed to link step:`, updateError);
                                     }
+                                    break;
                                 }
                             }
-                            console.log(`[Auto-link] Total linked: ${linkedCount} steps`);
                         }
+                        console.log(`[Auto-link] Total linked: ${linkedCount} steps`);
                     }
                 }
-            } catch (linkError) {
-                console.warn('[Auto-link] Failed (non-critical):', linkError);
             }
+            } catch (linkError) {
+            console.warn('[Auto-link] Failed (non-critical):', linkError);
         }
+    }
 
         // Recalculate completed steps
         const { data: updatedSteps } = await getSupabase()
-            .from('demarche_steps')
-            .select('isCompleted')
-            .eq('demarcheId', data.id);
+        .from('demarche_steps')
+        .select('isCompleted')
+        .eq('demarcheId', data.id);
 
-        const completedCount = updatedSteps?.filter((s: any) => s.isCompleted).length || 0;
+    const completedCount = updatedSteps?.filter((s: any) => s.isCompleted).length || 0;
 
-        return NextResponse.json({
-            ...data,
-            status: data.status?.toLowerCase() || 'draft',
-            steps: [],
-            completedSteps: completedCount,
-            totalSteps: stepsToInsert.length,
-            missingPieces: 0,
-        }, { status: 201 });
-    } catch (error: any) {
-        console.error('Error creating demarche:', error);
-        return NextResponse.json(
-            { error: 'Failed to create demarche', details: error.message },
-            { status: 500 }
-        );
-    }
+    return NextResponse.json({
+        ...data,
+        status: data.status?.toLowerCase() || 'draft',
+        steps: [],
+        completedSteps: completedCount,
+        totalSteps: stepsToInsert.length,
+        missingPieces: 0,
+    }, { status: 201 });
+} catch (error: any) {
+    console.error('Error creating demarche:', error);
+    return NextResponse.json(
+        { error: 'Failed to create demarche', details: error.message },
+        { status: 500 }
+    );
+}
 }
 
 // DELETE /api/demarches?id=xxx
