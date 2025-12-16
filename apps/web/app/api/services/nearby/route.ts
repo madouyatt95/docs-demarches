@@ -1,5 +1,5 @@
 // ============================================
-// DOCSBOX API - Nearby Services (using French API)
+// DOCSBOX API - Nearby Services (Simple Version)
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,125 +14,119 @@ interface ServiceResult {
     postalCode: string;
     city: string;
     phone?: string;
-    email?: string;
     url?: string;
-    distance?: number;
 }
+
+// Service type labels
+const typeLabels: Record<string, string> = {
+    'mairie': 'Mairie',
+    'prefecture': 'Préfecture',
+    'sous_prefecture': 'Sous-préfecture',
+    'caf': 'CAF',
+    'cpam': 'CPAM',
+    'pole_emploi': 'France Travail',
+    'tresorerie': 'Trésorerie',
+    'tribunal': 'Tribunal',
+};
 
 // GET /api/services/nearby?postalCode=75001&type=mairie
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
-    const lat = searchParams.get('lat');
-    const lng = searchParams.get('lng');
     const type = searchParams.get('type') || 'mairie';
-    const postalCode = searchParams.get('postalCode');
+    const postalCode = searchParams.get('postalCode') || '';
 
-    console.log('[Services API] Request:', { lat, lng, type, postalCode });
+    console.log('[Services API] Request:', { type, postalCode });
 
     try {
-        let services: ServiceResult[] = [];
+        const typeLabel = typeLabels[type] || 'Service public';
 
-        // Use geo.api.gouv.fr to get commune code from postal code
-        let cityCode = '';
+        // Get city name from postal code using geo.api.gouv.fr
         let cityName = '';
 
         if (postalCode) {
-            const geoUrl = `https://geo.api.gouv.fr/communes?codePostal=${postalCode}&fields=code,nom&limit=1`;
-            console.log('[Services API] Getting city code from:', geoUrl);
+            try {
+                const geoUrl = `https://geo.api.gouv.fr/communes?codePostal=${postalCode}&fields=nom&limit=1`;
+                const geoRes = await fetch(geoUrl);
 
-            const geoRes = await fetch(geoUrl);
-            if (geoRes.ok) {
-                const geoData = await geoRes.json();
-                if (geoData.length > 0) {
-                    cityCode = geoData[0].code;
-                    cityName = geoData[0].nom;
-                    console.log('[Services API] Found city:', cityName, 'code:', cityCode);
+                if (geoRes.ok) {
+                    const geoData = await geoRes.json();
+                    if (geoData.length > 0) {
+                        cityName = geoData[0].nom;
+                    }
                 }
+            } catch (e) {
+                console.log('[Services API] Could not resolve city name');
             }
         }
 
-        if (!cityCode && !lat) {
-            // Default to Paris 1er
-            cityCode = '75101';
-            cityName = 'Paris 1er';
-        }
+        // If we couldn't get city name, use postal code
+        const location = cityName || postalCode || 'Paris';
+        const searchQuery = `${typeLabel} ${location}`;
 
-        // Map our types to API type codes
-        const typeMapping: Record<string, string> = {
-            'mairie': 'mairie',
-            'prefecture': 'prefecture',
-            'sous_prefecture': 'sous_prefecture',
-            'caf': 'caf',
-            'cpam': 'cpam',
-            'pole_emploi': 'pole_emploi',
-            'tresorerie': 'ddfip',
-            'tribunal': 'ti',
-        };
-
-        const apiType = typeMapping[type] || 'mairie';
-
-        // Use etablissements-publics API
-        const baseUrl = `https://etablissements-publics.api.gouv.fr/v3/communes/${cityCode}/${apiType}`;
-        console.log('[Services API] Fetching:', baseUrl);
-
-        const response = await fetch(baseUrl, {
-            headers: { 'Accept': 'application/json' },
-        });
-
-        console.log('[Services API] Response status:', response.status);
-
-        if (response.ok) {
-            const data = await response.json();
-            console.log('[Services API] Got data:', data.features?.length || 0, 'results');
-
-            if (data.features && Array.isArray(data.features)) {
-                services = data.features.map((feature: any) => {
-                    const props = feature.properties || {};
-                    const adresse = props.adresses?.[0] || {};
-
-                    return {
-                        id: props.id || String(Math.random()),
-                        name: props.nom || 'Service public',
-                        type: props.pivot?.[0]?.type_service_local || type,
-                        address: adresse.lignes?.join(', ') || '',
-                        postalCode: adresse.codePostal || postalCode || '',
-                        city: adresse.commune || cityName || '',
-                        phone: props.telephone || null,
-                        email: props.email || null,
-                        url: props.url || null,
-                    };
-                });
-            }
-        } else {
-            console.log('[Services API] etablissements-publics failed, using fallback');
-            // Fallback: just show city info
-            services = [{
-                id: cityCode,
-                name: `Mairie de ${cityName || 'votre commune'}`,
-                type: 'mairie',
-                address: `Recherchez "${type} ${cityName}" sur Google Maps`,
-                postalCode: postalCode || '',
-                city: cityName || '',
+        // Generate helpful results with Google Maps links
+        const services: ServiceResult[] = [
+            {
+                id: '1',
+                name: `${typeLabel} de ${location}`,
+                type: type,
+                address: `Rechercher sur Google Maps`,
+                postalCode: postalCode,
+                city: location,
                 phone: null,
-                email: null,
-                url: `https://www.google.com/maps/search/${encodeURIComponent(type + ' ' + cityName)}`,
-            }];
+                url: `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`,
+            },
+        ];
+
+        // Add nearby alternatives based on type
+        if (type === 'mairie') {
+            services.push({
+                id: '2',
+                name: `Services municipaux ${location}`,
+                type: 'mairie',
+                address: 'Autres services de la mairie',
+                postalCode: postalCode,
+                city: location,
+                url: `https://www.google.com/maps/search/${encodeURIComponent(`mairie annexe ${location}`)}`,
+            });
         }
 
-        console.log('[Services API] Returning', services.length, 'services');
+        if (type === 'prefecture' || type === 'sous_prefecture') {
+            services.push({
+                id: '2',
+                name: `Point numérique`,
+                type: type,
+                address: 'Aide aux démarches en ligne',
+                postalCode: postalCode,
+                city: location,
+                url: `https://www.google.com/maps/search/${encodeURIComponent(`france services ${location}`)}`,
+            });
+        }
+
+        console.log('[Services API] Returning', services.length, 'services for', location);
 
         return NextResponse.json({
             services,
             total: services.length,
             searchType: type,
+            city: location,
         });
 
     } catch (error: any) {
         console.error('[Services API] Error:', error);
+
+        // Always return something useful
         return NextResponse.json({
-            error: 'Failed to fetch services',
-            details: error.message,
-            services: [],
+            services: [{
+                id: 'fallback',
+                name: `Rechercher ${typeLabels[type] || 'service'}`,
+                type: type,
+                address: 'Ouvrir Google Maps',
+                postalCode: postalCode,
+                city: postalCode,
+                url: `https://www.google.com/maps/search/${encodeURIComponent(typeLabels[type] + ' ' + postalCode)}`,
+            }],
+            total: 1,
+            searchType: type,
         });
     }
 }
