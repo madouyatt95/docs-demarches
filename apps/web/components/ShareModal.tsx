@@ -192,7 +192,7 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
                                 <button className="share-copy-btn" onClick={handleCopyLink}>
                                     {copied ? '✓ Copié !' : '📋 Copier'}
                                 </button>
-                                {navigator.share && (
+                                {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
                                     <button className="share-native-btn" onClick={handleNativeShare}>
                                         📤 Partager
                                     </button>
