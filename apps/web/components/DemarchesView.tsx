@@ -35,6 +35,13 @@ const templates = [
     { id: 'caf', name: 'CAF / APL', icon: '🏠' },
     { id: 'assurance', name: 'Assurance habitation', icon: '🛡️' },
     { id: 'impots', name: 'Impôts', icon: '📊' },
+    { id: 'naissance', name: 'Déclaration naissance', icon: '👶' },
+    { id: 'mariage', name: 'Mariage civil', icon: '💍' },
+    { id: 'deces', name: 'Décès / Succession', icon: '⚰️' },
+    { id: 'operateur', name: 'Changer opérateur', icon: '📱' },
+    { id: 'banque', name: 'Ouvrir compte bancaire', icon: '💳' },
+    { id: 'secu', name: 'Sécurité sociale', icon: '🏥' },
+    { id: 'vehicule_occasion', name: 'Achat véhicule occasion', icon: '🚙' },
 ];
 
 const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
