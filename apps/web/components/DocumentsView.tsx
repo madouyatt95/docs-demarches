@@ -108,146 +108,126 @@ export function DocumentsView() {
     }, {} as Record<string, Document[]>);
 
     return (
-        <div className="ios-container">
-            {/* Alert Card */}
-            {expiringDocs.length > 0 && (
-                <div className="ios-alert-card">
-                    <div className="ios-alert-content">
-                        <span className="ios-alert-icon">⚠️</span>
-                        <div className="ios-alert-text">
-                            <p className="ios-alert-title">
-                                {expiringDocs.length} document{expiringDocs.length > 1 ? 's' : ''} expire{expiringDocs.length > 1 ? 'nt' : ''} bientôt
-                            </p>
-                            <p className="ios-alert-subtitle">
-                                Pensez à les renouveler
-                            </p>
-                        </div>
-                    </div>
-                    <button className="ios-alert-action">Voir</button>
+        <div className="dark-container">
+            {/* Stats Card */}
+            <div className="dark-stats-card">
+                <div className="dark-stats-item">
+                    <span className="dark-stats-number">{documents.length}</span>
+                    <span className="dark-stats-label">Documents</span>
                 </div>
-            )}
-
-            {/* Greeting Card */}
-            <div className="ios-greeting-card">
-                <div className="ios-greeting-emoji">👋</div>
-                <div className="ios-greeting-text">
-                    <p className="ios-greeting-hello">Bonjour,</p>
-                    <p className="ios-greeting-name">{userName}</p>
-                </div>
-                <div className="ios-greeting-stats">
-                    <span className="ios-stat-number">{documents.length}</span>
-                    <span className="ios-stat-label">documents</span>
+                <div className="dark-stats-divider"></div>
+                <div className="dark-stats-item">
+                    <span className="dark-stats-number dark-stats-alert">{expiringDocs.length}</span>
+                    <span className="dark-stats-label">Alertes</span>
                 </div>
             </div>
 
-            {/* Section Header */}
-            <div className="ios-section-header">
-                <h2 className="ios-section-title">Mes Documents</h2>
-                <button className="ios-section-action">Voir tout</button>
+            {/* Quick Actions 2x2 Grid */}
+            <div className="dark-section-header">
+                <h2 className="dark-section-title">Actions rapides</h2>
+            </div>
+            <div className="dark-quick-actions">
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }}>
+                    <span className="dark-action-icon">📷</span>
+                    <span className="dark-action-label">Scanner</span>
+                </button>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-green)' }}>
+                    <span className="dark-action-icon">📁</span>
+                    <span className="dark-action-label">Importer</span>
+                </button>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-purple)' }}>
+                    <span className="dark-action-icon">📦</span>
+                    <span className="dark-action-label">Pack</span>
+                </button>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-orange)' }}>
+                    <span className="dark-action-icon">📤</span>
+                    <span className="dark-action-label">Partager</span>
+                </button>
             </div>
 
-            {/* Segmented Control */}
-            <div className="ios-segmented-control">
+            {/* Category Pills */}
+            <div className="dark-section-header">
+                <h2 className="dark-section-title">Catégories</h2>
+            </div>
+            <div className="dark-category-pills">
                 <button
-                    className={`ios-segment ${activeTab === 'recent' ? 'active' : ''}`}
+                    className={`dark-pill ${activeTab === 'recent' ? 'active' : ''}`}
                     onClick={() => setActiveTab('recent')}
                 >
-                    Récents
+                    Tous
                 </button>
-                <button
-                    className={`ios-segment ${activeTab === 'categories' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('categories')}
-                >
-                    Catégories
-                </button>
+                {Object.entries(categoryConfig).filter(([key]) => key !== 'default').map(([catId, catInfo]) => (
+                    <button key={catId} className="dark-pill">
+                        <span>{catInfo.emoji}</span>
+                        <span>{catInfo.name}</span>
+                    </button>
+                ))}
             </div>
 
             {/* Loading State */}
             {isLoading && (
-                <div className="ios-loading">
-                    <div className="ios-spinner"></div>
+                <div className="dark-loading">
+                    <div className="dark-spinner"></div>
                     <p>Chargement...</p>
                 </div>
             )}
 
             {/* Error State */}
             {error && !isLoading && (
-                <div className="ios-error">
+                <div className="dark-error">
                     <span>⚠️</span>
                     <span>{error}</span>
-                    <button onClick={fetchDocuments} className="ios-retry-btn">
+                    <button onClick={fetchDocuments} className="dark-retry-btn">
                         Réessayer
                     </button>
                 </div>
             )}
 
-            {/* Documents Grid */}
-            {!isLoading && !error && activeTab === 'recent' && (
-                <div className="ios-grid">
-                    {documents.slice(0, 6).map((doc) => {
-                        const catInfo = getCategoryInfo(doc.categoryId);
-                        const expiresIn = doc.expirationDate ? daysUntil(doc.expirationDate) : null;
-                        const isExpiring = expiresIn !== null && expiresIn <= 30 && expiresIn > 0;
-                        const isExpired = expiresIn !== null && expiresIn <= 0;
+            {/* Documents Section */}
+            {!isLoading && !error && (
+                <>
+                    <div className="dark-section-header">
+                        <h2 className="dark-section-title">Mes Documents</h2>
+                        <span className="dark-section-count">{documents.length}</span>
+                    </div>
 
-                        return (
-                            <div key={doc.id} className="ios-doc-card">
-                                <div
-                                    className="ios-doc-icon"
-                                    style={{ backgroundColor: `${catInfo.color}15` }}
-                                >
-                                    <span>{catInfo.emoji}</span>
-                                </div>
-                                <p className="ios-doc-title">{doc.title}</p>
-                                <div className="ios-doc-footer">
-                                    <span
-                                        className="ios-doc-dot"
-                                        style={{ backgroundColor: catInfo.color }}
-                                    ></span>
-                                    <span className="ios-doc-category">{catInfo.name}</span>
-                                </div>
-                                {(isExpiring || isExpired) && (
-                                    <div className={`ios-doc-badge ${isExpired ? 'expired' : 'warning'}`}>
-                                        {isExpired ? 'Expiré' : `${expiresIn}j`}
+                    {documents.length > 0 ? (
+                        <div className="dark-docs-grid">
+                            {documents.slice(0, 6).map((doc) => {
+                                const catInfo = getCategoryInfo(doc.categoryId);
+                                const expiresIn = doc.expirationDate ? daysUntil(doc.expirationDate) : null;
+                                const isExpiring = expiresIn !== null && expiresIn <= 30 && expiresIn > 0;
+                                const isExpired = expiresIn !== null && expiresIn <= 0;
+
+                                return (
+                                    <div key={doc.id} className="dark-doc-card">
+                                        <div
+                                            className="dark-doc-header"
+                                            style={{ background: `linear-gradient(135deg, ${catInfo.color}40 0%, ${catInfo.color}20 100%)` }}
+                                        >
+                                            <span className="dark-doc-emoji">{catInfo.emoji}</span>
+                                            {(isExpiring || isExpired) && (
+                                                <span className={`dark-doc-badge ${isExpired ? 'expired' : 'warning'}`}>
+                                                    {isExpired ? '⚠️' : `${expiresIn}j`}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="dark-doc-body">
+                                            <p className="dark-doc-title">{doc.title}</p>
+                                            <p className="dark-doc-category">{catInfo.name}</p>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Categories View */}
-            {!isLoading && !error && activeTab === 'categories' && (
-                <div className="ios-categories">
-                    {Object.entries(categoryConfig).filter(([key]) => key !== 'default').map(([catId, catInfo]) => {
-                        const count = documentsByCategory[catId]?.length || 0;
-                        return (
-                            <div key={catId} className="ios-category-row">
-                                <div
-                                    className="ios-category-icon"
-                                    style={{ backgroundColor: `${catInfo.color}15` }}
-                                >
-                                    <span>{catInfo.emoji}</span>
-                                </div>
-                                <div className="ios-category-info">
-                                    <p className="ios-category-name">{catInfo.name}</p>
-                                    <p className="ios-category-count">{count} document{count !== 1 ? 's' : ''}</p>
-                                </div>
-                                <span className="ios-category-chevron">›</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && !error && documents.length === 0 && (
-                <div className="ios-empty">
-                    <div className="ios-empty-icon">📂</div>
-                    <h3>Aucun document</h3>
-                    <p>Commencez par ajouter votre premier document</p>
-                </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="dark-empty">
+                            <div className="dark-empty-icon">📂</div>
+                            <h3>Aucun document</h3>
+                            <p>Commencez par ajouter votre premier document</p>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
