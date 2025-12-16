@@ -185,6 +185,8 @@ export async function POST(request: NextRequest) {
             // AUTO-LINK: Check if existing documents match any step requirements
             // ====================================
             try {
+                console.log('[Auto-link] Starting auto-link for démarche:', data.id);
+
                 // Map document types to category IDs
                 const typeToCategoryMap: Record<string, string[]> = {
                     'identite': ['cat_identity'],
@@ -199,6 +201,7 @@ export async function POST(request: NextRequest) {
                     'rib': ['cat_finance'],
                     'impots': ['cat_finance'],
                     'salaire': ['cat_finance', 'cat_work'],
+                    'photo': ['cat_identity'],
                 };
 
                 // Get unique required document types from steps
@@ -208,6 +211,8 @@ export async function POST(request: NextRequest) {
                         .map((s: any) => s.requiredDocumentType)
                 )];
 
+                console.log('[Auto-link] Required types:', requiredTypes);
+
                 if (requiredTypes.length > 0) {
                     // Get corresponding category IDs
                     const categoryIds: string[] = [];
@@ -216,13 +221,17 @@ export async function POST(request: NextRequest) {
                         categoryIds.push(...cats);
                     });
 
+                    console.log('[Auto-link] Looking for categories:', [...new Set(categoryIds)]);
+
                     if (categoryIds.length > 0) {
                         // Find existing documents with matching categories
-                        const { data: existingDocs } = await getSupabase()
+                        const { data: existingDocs, error: docsError } = await getSupabase()
                             .from('documents')
                             .select('id, categoryId, title')
-                            .in('categoryId', categoryIds)
+                            .in('categoryId', [...new Set(categoryIds)])
                             .eq('userId', 'demo_user');
+
+                        console.log('[Auto-link] Found documents:', existingDocs?.length || 0, docsError || '');
 
                         if (existingDocs && existingDocs.length > 0) {
                             // Build reverse map: category -> document
@@ -230,17 +239,19 @@ export async function POST(request: NextRequest) {
                             existingDocs.forEach(doc => {
                                 if (doc.categoryId) {
                                     categoryToDoc[doc.categoryId] = doc.id;
+                                    console.log(`[Auto-link] Mapped ${doc.categoryId} -> ${doc.title}`);
                                 }
                             });
 
                             // Update steps with matching documents
+                            let linkedCount = 0;
                             for (const step of steps) {
                                 if (!step.requiredDocumentType) continue;
 
                                 const matchingCategories = typeToCategoryMap[step.requiredDocumentType] || [];
                                 for (const catId of matchingCategories) {
                                     if (categoryToDoc[catId]) {
-                                        await getSupabase()
+                                        const { error: updateError } = await getSupabase()
                                             .from('demarche_steps')
                                             .update({
                                                 documentId: categoryToDoc[catId],
@@ -249,16 +260,22 @@ export async function POST(request: NextRequest) {
                                             })
                                             .eq('id', step.id);
 
-                                        console.log(`Auto-linked existing doc to step ${step.id}`);
+                                        if (!updateError) {
+                                            linkedCount++;
+                                            console.log(`[Auto-link] ✓ Linked doc to step "${step.title}"`);
+                                        } else {
+                                            console.log(`[Auto-link] ✗ Failed to link step:`, updateError);
+                                        }
                                         break;
                                     }
                                 }
                             }
+                            console.log(`[Auto-link] Total linked: ${linkedCount} steps`);
                         }
                     }
                 }
             } catch (linkError) {
-                console.warn('Auto-link existing docs failed (non-critical):', linkError);
+                console.warn('[Auto-link] Failed (non-critical):', linkError);
             }
         }
 
