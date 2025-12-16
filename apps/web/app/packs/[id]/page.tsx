@@ -198,7 +198,50 @@ export default function PackDetailPage() {
                     className="dark-pack-action-btn primary"
                     onClick={() => setShowAddModal(true)}
                 >
-                    ➕ Ajouter documents
+                    ➕ Ajouter
+                </button>
+                <button
+                    className="dark-pack-action-btn secondary"
+                    onClick={async () => {
+                        if (!pack.documents?.length) {
+                            alert('Le pack est vide');
+                            return;
+                        }
+                        // Download each document
+                        for (const doc of pack.documents) {
+                            if (doc.filePath && doc.filePath !== '/demo/') {
+                                window.open(doc.filePath, '_blank');
+                            }
+                        }
+                    }}
+                    disabled={!pack.documents?.length}
+                >
+                    📥 Exporter tout
+                </button>
+                <button
+                    className="dark-pack-action-btn secondary"
+                    onClick={async () => {
+                        try {
+                            const res = await fetch('/api/share', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    packId: pack.id,
+                                    expirationDays: 7,
+                                }),
+                            });
+                            const data = await res.json();
+                            if (data.shareUrl) {
+                                await navigator.clipboard.writeText(data.shareUrl);
+                                alert(`Lien copié !\n\n${data.shareUrl}\n\nExpire dans 7 jours`);
+                            }
+                        } catch (err) {
+                            console.error('Share error:', err);
+                            alert('Erreur lors de la création du lien');
+                        }
+                    }}
+                >
+                    🔗 Partager
                 </button>
             </div>
 

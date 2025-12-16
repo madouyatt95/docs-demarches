@@ -4228,6 +4228,20 @@ body {
     background: #2563EB;
 }
 
+.dark-pack-action-btn.secondary {
+    background: #374151;
+    color: white;
+}
+
+.dark-pack-action-btn.secondary:hover {
+    background: #4B5563;
+}
+
+.dark-pack-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .dark-docs-list {
     display: flex;
     flex-direction: column;
