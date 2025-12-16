@@ -98,6 +98,25 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
         setUserName(storedName);
     }, [fetchDocuments]);
 
+    const handleDeleteDocument = async (docId: string) => {
+        if (!confirm('Supprimer ce document ?')) return;
+
+        try {
+            const res = await fetch(`/api/documents/${docId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                fetchDocuments();
+            } else {
+                alert('Erreur lors de la suppression');
+            }
+        } catch (err) {
+            console.error('Error deleting document:', err);
+            alert('Erreur lors de la suppression');
+        }
+    };
+
     // Listen for refresh events
     useEffect(() => {
         const handleRefresh = () => fetchDocuments();
@@ -221,6 +240,27 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
                                         <div className="dark-doc-body">
                                             <p className="dark-doc-title">{doc.title}</p>
                                             <p className="dark-doc-category">{catInfo.name}</p>
+                                            <div className="dark-doc-actions">
+                                                {doc.filePath && doc.filePath !== '/demo/' && (
+                                                    <a
+                                                        href={doc.filePath}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="dark-doc-action-btn view"
+                                                    >
+                                                        👁️
+                                                    </a>
+                                                )}
+                                                <button
+                                                    className="dark-doc-action-btn delete"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteDocument(doc.id);
+                                                    }}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 );

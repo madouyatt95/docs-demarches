@@ -1,69 +1,85 @@
 // ============================================
-// DOCSBOX API - Single Document Route
+// DOCSBOX API - Single Document Route (Supabase)
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
-// Mock DB (shared with main route - in prod use DB)
-let documents = [
-    {
-        id: '1',
-        title: "Carte d'identité",
-        categoryId: 'cat_identity',
-        filePath: '/uploads/docs/cni.pdf',
-        fileSize: 1024000,
-        mimeType: 'application/pdf',
-        expirationDate: '2025-03-15',
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z',
-    },
-];
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 // GET /api/documents/[id]
 export async function GET(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
-    const doc = documents.find(d => d.id === params.id);
+    const { id } = params;
 
-    if (!doc) {
+    try {
+        const { data, error } = await getSupabase()
+            .from('documents')
+            .select(`
+                *,
+                category:categories(id, name, icon, color)
+            `)
+            .eq('id', id)
+            .eq('userId', 'demo_user')
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return NextResponse.json(
+                    { error: 'Document not found' },
+                    { status: 404 }
+                );
+            }
+            throw error;
+        }
+
+        return NextResponse.json(data);
+    } catch (error: any) {
+        console.error('Error fetching document:', error);
         return NextResponse.json(
-            { error: 'Document not found' },
-            { status: 404 }
+            { error: 'Failed to fetch document', details: error.message },
+            { status: 500 }
         );
     }
-
-    return NextResponse.json(doc);
 }
 
-// PUT /api/documents/[id]
-export async function PUT(
+// PATCH /api/documents/[id] - Update a document
+export async function PATCH(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
-    const docIndex = documents.findIndex(d => d.id === params.id);
-
-    if (docIndex === -1) {
-        return NextResponse.json(
-            { error: 'Document not found' },
-            { status: 404 }
-        );
-    }
+    const { id } = params;
+    const body = await request.json();
 
     try {
-        const body = await request.json();
-
-        documents[docIndex] = {
-            ...documents[docIndex],
-            ...body,
+        const updateData: any = {
             updatedAt: new Date().toISOString(),
         };
 
-        return NextResponse.json(documents[docIndex]);
-    } catch (error) {
+        if (body.title !== undefined) updateData.title = body.title;
+        if (body.categoryId !== undefined) updateData.categoryId = body.categoryId;
+        if (body.expirationDate !== undefined) updateData.expirationDate = body.expirationDate;
+        if (body.tags !== undefined) updateData.tags = body.tags;
+
+        const { data, error } = await getSupabase()
+            .from('documents')
+            .update(updateData)
+            .eq('id', id)
+            .eq('userId', 'demo_user')
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return NextResponse.json(data);
+    } catch (error: any) {
+        console.error('Error updating document:', error);
         return NextResponse.json(
-            { error: 'Invalid request body' },
-            { status: 400 }
+            { error: 'Failed to update document', details: error.message },
+            { status: 500 }
         );
     }
 }
@@ -73,16 +89,46 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
-    const docIndex = documents.findIndex(d => d.id === params.id);
+    const { id } = params;
 
-    if (docIndex === -1) {
+    try {
+        // First get the document to get the file path
+        const { data: doc } = await getSupabase()
+            .from('documents')
+            .select('filePath')
+            .eq('id', id)
+            .eq('userId', 'demo_user')
+            .single();
+
+        // Delete from database
+        const { error } = await getSupabase()
+            .from('documents')
+            .delete()
+            .eq('id', id)
+            .eq('userId', 'demo_user');
+
+        if (error) throw error;
+
+        // Try to delete from storage if it exists
+        if (doc?.filePath && doc.filePath.includes('docsbox-files')) {
+            try {
+                const pathParts = doc.filePath.split('/docsbox-files/');
+                if (pathParts[1]) {
+                    await getSupabase().storage
+                        .from('docsbox-files')
+                        .remove([pathParts[1]]);
+                }
+            } catch (storageError) {
+                console.warn('Could not delete file from storage:', storageError);
+            }
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('Error deleting document:', error);
         return NextResponse.json(
-            { error: 'Document not found' },
-            { status: 404 }
+            { error: 'Failed to delete document', details: error.message },
+            { status: 500 }
         );
     }
-
-    documents.splice(docIndex, 1);
-
-    return NextResponse.json({ success: true }, { status: 200 });
 }

@@ -4061,3 +4061,42 @@ body {
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-sm);
 }
+
+/* Document action buttons */
+.dark-doc-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.dark-doc-action-btn {
+    padding: 0.35rem 0.5rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dark-doc-action-btn.view {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--color-primary);
+}
+
+.dark-doc-action-btn.view:hover {
+    background: rgba(59, 130, 246, 0.25);
+}
+
+.dark-doc-action-btn.delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+}
+
+.dark-doc-action-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
