@@ -3,12 +3,10 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
 
 // GET /api/demarches
 export async function GET(request: NextRequest) {
@@ -16,7 +14,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     try {
-        let query = supabase
+        let query = getSupabase()
             .from('demarches')
             .select(`
         *,
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date().toISOString(),
         };
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('demarches')
             .insert(demarche)
             .select()
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest) {
                 requiredDocumentType: step.requiredDocumentType || null,
             }));
 
-            await supabase.from('demarche_steps').insert(steps);
+            await getSupabase().from('demarche_steps').insert(steps);
         }
 
         return NextResponse.json({
@@ -149,7 +147,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await getSupabase()
             .from('demarches')
             .delete()
             .eq('id', id)

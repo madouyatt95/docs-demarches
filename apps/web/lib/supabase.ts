@@ -1,69 +1,21 @@
-import { createClient } from '@supabase/supabase-js'
+// ============================================
+// DOCSBOX - Supabase Client (Safe Initialization)
+// ============================================
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+let supabaseInstance: SupabaseClient | null = null;
 
-// Type definitions for our database tables
-export type User = {
-    id: string
-    email: string
-    passwordHash: string
-    displayName: string | null
-    avatarUrl: string | null
-    pin: string | null
-    biometricEnabled: boolean
-    createdAt: string
-    updatedAt: string
-    lastLoginAt: string | null
-}
+export function getSupabase(): SupabaseClient {
+    if (supabaseInstance) return supabaseInstance;
 
-export type Document = {
-    id: string
-    userId: string
-    title: string
-    categoryId: string | null
-    filePath: string
-    fileSize: number
-    mimeType: string
-    thumbnailPath: string | null
-    ocrText: string | null
-    expirationDate: string | null
-    tags: string[]
-    syncStatus: 'LOCAL_ONLY' | 'SYNCING' | 'SYNCED' | 'ERROR'
-    encryptionKey: string | null
-    createdAt: string
-    updatedAt: string
-}
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export type Category = {
-    id: string
-    userId: string | null
-    name: string
-    icon: string | null
-    color: string | null
-    sortOrder: number
-}
+    if (!url || !key) {
+        throw new Error('Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    }
 
-export type Pack = {
-    id: string
-    userId: string
-    name: string
-    templateId: string | null
-    createdAt: string
-    updatedAt: string
-}
-
-export type Demarche = {
-    id: string
-    userId: string
-    title: string
-    templateId: string
-    status: 'DRAFT' | 'IN_PROGRESS' | 'SENT' | 'WAITING' | 'COMPLETED'
-    deadline: string | null
-    notes: string | null
-    createdAt: string
-    updatedAt: string
-    completedAt: string | null
+    supabaseInstance = createClient(url, key);
+    return supabaseInstance;
 }

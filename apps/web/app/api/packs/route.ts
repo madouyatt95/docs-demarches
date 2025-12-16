@@ -3,12 +3,10 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
 
 // GET /api/packs
 export async function GET(request: NextRequest) {
@@ -16,7 +14,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
 
     try {
-        let query = supabase
+        let query = getSupabase()
             .from('packs')
             .select(`
         *,
@@ -73,7 +71,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date().toISOString(),
         };
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('packs')
             .insert(pack)
             .select()
@@ -107,7 +105,7 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Pack ID required' }, { status: 400 });
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('packs')
             .update({
                 name,
@@ -144,7 +142,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await getSupabase()
             .from('packs')
             .delete()
             .eq('id', id)

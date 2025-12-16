@@ -3,12 +3,10 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Force dynamic rendering to prevent build-time evaluation
+export const dynamic = 'force-dynamic';
 
 // GET /api/documents
 export async function GET(request: NextRequest) {
@@ -21,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     try {
         // Build query
-        let query = supabase
+        let query = getSupabase()
             .from('documents')
             .select(`
         *,
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date().toISOString(),
         };
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('documents')
             .insert(document)
             .select(`
@@ -117,7 +115,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await getSupabase()
             .from('documents')
             .delete()
             .eq('id', id)
