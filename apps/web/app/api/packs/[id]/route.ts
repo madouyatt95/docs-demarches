@@ -79,6 +79,7 @@ export async function PATCH(
                 const { data, error } = await getSupabase()
                     .from('pack_documents')
                     .insert({
+                        id: `pd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                         packId: id,
                         documentId: docId,
                     })
