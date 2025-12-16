@@ -9,6 +9,7 @@ import { DocumentsView } from '@/components/DocumentsView';
 import { Sidebar } from '@/components/Sidebar';
 import { AddDocumentModal } from '@/components/AddDocumentModal';
 import { ScannerModal } from '@/components/ScannerModal';
+import { ShareModal } from '@/components/ShareModal';
 import { PremiumGateModal } from '@/components/PremiumGateModal';
 import { MobileNav } from '@/components/MobileNav';
 import { usePremium } from '@/lib/premium-context';
@@ -17,7 +18,9 @@ export default function HomePage() {
     const { isPremium } = usePremium();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showScannerModal, setShowScannerModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
     const [showPremiumGate, setShowPremiumGate] = useState(false);
+    const [premiumFeature, setPremiumFeature] = useState('');
 
     const openAddModal = () => setShowAddModal(true);
 
@@ -25,15 +28,23 @@ export default function HomePage() {
         if (isPremium) {
             setShowScannerModal(true);
         } else {
+            setPremiumFeature('Scanner avec OCR');
             setShowPremiumGate(true);
         }
     };
 
-    const handleScannerSuccess = (data: { title: string; file: File; extractedText: string }) => {
-        // TODO: Save the scanned document with OCR text
-        console.log('Scanned document:', data);
-        // For now, just refresh the documents list
+    const handleShareClick = () => {
+        if (isPremium) {
+            setShowShareModal(true);
+        } else {
+            setPremiumFeature('Liens sécurisés');
+            setShowPremiumGate(true);
+        }
+    };
+
+    const handleScannerSuccess = () => {
         window.dispatchEvent(new CustomEvent('documents-refresh'));
+        setShowScannerModal(false);
     };
 
     return (
@@ -43,6 +54,7 @@ export default function HomePage() {
                 <DocumentsView
                     onOpenModal={openAddModal}
                     onScannerClick={handleScannerClick}
+                    onShareClick={handleShareClick}
                 />
             </main>
 
@@ -72,11 +84,17 @@ export default function HomePage() {
                 onSuccess={handleScannerSuccess}
             />
 
+            {/* Share Modal (Premium) */}
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+            />
+
             {/* Premium Gate Modal */}
             <PremiumGateModal
                 isOpen={showPremiumGate}
                 onClose={() => setShowPremiumGate(false)}
-                feature="Scanner avec OCR"
+                feature={premiumFeature}
             />
 
             <MobileNav />

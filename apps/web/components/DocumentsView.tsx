@@ -59,9 +59,10 @@ function getCategoryInfo(categoryId: string | null) {
 interface DocumentsViewProps {
     onOpenModal?: () => void;
     onScannerClick?: () => void;
+    onShareClick?: () => void;
 }
 
-export function DocumentsView({ onOpenModal, onScannerClick }: DocumentsViewProps) {
+export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: DocumentsViewProps) {
     const [activeTab, setActiveTab] = useState<'recent' | 'categories'>('recent');
     const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -144,7 +145,7 @@ export function DocumentsView({ onOpenModal, onScannerClick }: DocumentsViewProp
                     <span className="dark-action-icon">📦</span>
                     <span className="dark-action-label">Pack</span>
                 </button>
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-orange)' }}>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-orange)' }} onClick={onShareClick}>
                     <span className="dark-action-icon">📤</span>
                     <span className="dark-action-label">Partager</span>
                 </button>

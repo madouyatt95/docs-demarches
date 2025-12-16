@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
             filePath: body.filePath || '/uploads/temp.pdf',
             fileSize: body.fileSize || 0,
             mimeType: body.mimeType || 'application/pdf',
+            ocrText: body.ocrText || null, // OCR extracted text (Premium)
             expirationDate: body.expirationDate || null,
             tags: body.tags || [],
             syncStatus: 'LOCAL_ONLY',

@@ -10,22 +10,29 @@ import Tesseract from 'tesseract.js';
 interface ScannerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: (documentData: {
-        title: string;
-        file: File;
-        extractedText: string;
-    }) => void;
+    onSuccess: () => void;
 }
 
 export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) {
-    const [step, setStep] = useState<'capture' | 'processing' | 'review'>('capture');
+    const [step, setStep] = useState<'capture' | 'processing' | 'review' | 'saving'>('capture');
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [capturedFile, setCapturedFile] = useState<File | null>(null);
     const [extractedText, setExtractedText] = useState('');
     const [progress, setProgress] = useState(0);
     const [title, setTitle] = useState('');
+    const [categoryId, setCategoryId] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const categories = [
+        { id: 'cat_identity', name: 'Identité', emoji: '🪪' },
+        { id: 'cat_housing', name: 'Logement', emoji: '🏠' },
+        { id: 'cat_work', name: 'Travail', emoji: '💼' },
+        { id: 'cat_vehicle', name: 'Véhicule', emoji: '🚗' },
+        { id: 'cat_finance', name: 'Finance', emoji: '💰' },
+        { id: 'cat_health', name: 'Santé', emoji: '🏥' },
+        { id: 'cat_education', name: 'Éducation', emoji: '🎓' },
+    ];
 
     const resetState = () => {
         setStep('capture');
@@ -34,6 +41,7 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         setExtractedText('');
         setProgress(0);
         setTitle('');
+        setCategoryId('');
         setError(null);
     };
 
@@ -82,15 +90,53 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!capturedFile || !title.trim()) return;
 
-        onSuccess({
-            title: title.trim(),
-            file: capturedFile,
-            extractedText,
-        });
-        handleClose();
+        setStep('saving');
+        setError(null);
+
+        try {
+            // First upload the file
+            const formData = new FormData();
+            formData.append('file', capturedFile);
+
+            const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!uploadRes.ok) {
+                throw new Error('Erreur lors de l\'upload du fichier');
+            }
+
+            const uploadData = await uploadRes.json();
+
+            // Then create the document with OCR text
+            const docRes = await fetch('/api/documents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: title.trim(),
+                    categoryId: categoryId || null,
+                    filePath: uploadData.filePath || uploadData.path,
+                    fileSize: capturedFile.size,
+                    mimeType: capturedFile.type,
+                    ocrText: extractedText, // Save OCR text
+                }),
+            });
+
+            if (!docRes.ok) {
+                throw new Error('Erreur lors de la création du document');
+            }
+
+            onSuccess();
+            handleClose();
+        } catch (err: any) {
+            console.error('Save error:', err);
+            setError(err.message || 'Erreur lors de la sauvegarde');
+            setStep('review');
+        }
     };
 
     if (!isOpen) return null;
@@ -181,6 +227,10 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                                 />
                             )}
 
+                            {error && (
+                                <div className="modal-error">{error}</div>
+                            )}
+
                             <div className="form-group">
                                 <label className="form-label">Titre du document</label>
                                 <input
@@ -193,15 +243,41 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                             </div>
 
                             <div className="form-group">
+                                <label className="form-label">Catégorie</label>
+                                <select
+                                    className="form-input"
+                                    value={categoryId}
+                                    onChange={(e) => setCategoryId(e.target.value)}
+                                >
+                                    <option value="">Sélectionner...</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.emoji} {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
                                 <label className="form-label">Texte extrait (OCR)</label>
                                 <textarea
                                     className="form-input scanner-text-area"
                                     value={extractedText}
                                     onChange={(e) => setExtractedText(e.target.value)}
-                                    rows={6}
+                                    rows={4}
                                     placeholder="Aucun texte détecté"
                                 />
                             </div>
+                        </div>
+                    )}
+
+                    {/* Step 4: Saving */}
+                    {step === 'saving' && (
+                        <div className="scanner-processing">
+                            <div className="dark-spinner"></div>
+                            <p style={{ marginTop: '1rem', color: 'var(--color-text-secondary)' }}>
+                                Sauvegarde en cours...
+                            </p>
                         </div>
                     )}
                 </div>
