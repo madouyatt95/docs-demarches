@@ -35,16 +35,24 @@ export async function GET(
         }
 
         // Get documents in this pack via junction table
-        const { data: packDocs } = await getSupabase()
+        const { data: packDocs, error: packDocsError } = await getSupabase()
             .from('pack_documents')
-            .select(`
-                document:documents(
-                    id, title, categoryId, filePath, mimeType, createdAt
-                )
-            `)
+            .select('documentId')
             .eq('packId', id);
 
-        const documents = packDocs?.map(pd => pd.document).filter(Boolean) || [];
+        console.log('[Pack API] Pack documents junction:', { packDocs, packDocsError });
+
+        let documents: any[] = [];
+        if (packDocs && packDocs.length > 0) {
+            const docIds = packDocs.map(pd => pd.documentId);
+            const { data: docs, error: docsError } = await getSupabase()
+                .from('documents')
+                .select('id, title, categoryId, filePath, mimeType, createdAt')
+                .in('id', docIds);
+
+            console.log('[Pack API] Fetched documents:', { docs, docsError });
+            documents = docs || [];
+        }
 
         return NextResponse.json({
             ...pack,
