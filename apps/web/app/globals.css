@@ -4272,6 +4272,9 @@ body {
     max-height: 300px;
     overflow-y: auto;
     margin-bottom: 1rem;
+    background: var(--dark-card-bg);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
 }
 
 .dark-modal-doc-item {
@@ -4281,15 +4284,17 @@ body {
     padding: 0.75rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
+    color: var(--color-text);
 }
 
 .dark-modal-doc-item:hover {
-    background: rgba(59, 130, 246, 0.05);
+    background: rgba(59, 130, 246, 0.15);
 }
 
 .dark-modal-doc-item input {
     width: 1.25rem;
     height: 1.25rem;
+    accent-color: var(--color-primary);
 }
 
 .dark-modal-doc-icon {
@@ -4299,4 +4304,21 @@ body {
 .dark-modal-doc-title {
     flex: 1;
     font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+/* Dark mode for iOS modals */
+.ios-modal {
+    background: var(--dark-card-bg, #1F2937) !important;
+    color: var(--color-text, white);
+}
+
+.ios-modal-title {
+    color: var(--color-text, white) !important;
+}
+
+.ios-modal-input {
+    background: var(--color-background, #111827) !important;
+    color: var(--color-text, white) !important;
+    border-color: var(--color-border, #374151) !important;
 }
