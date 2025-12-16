@@ -69,6 +69,11 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
     const [error, setError] = useState<string | null>(null);
     const [userName, setUserName] = useState('');
 
+    // Edit document state
+    const [editingDocId, setEditingDocId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const [editCategory, setEditCategory] = useState('');
+
     // Count expiring documents
     const expiringDocs = documents.filter(doc => {
         if (!doc.expirationDate) return false;
@@ -114,6 +119,43 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
         } catch (err) {
             console.error('Error deleting document:', err);
             alert('Erreur lors de la suppression');
+        }
+    };
+
+    const startEditDocument = (doc: Document) => {
+        setEditingDocId(doc.id);
+        setEditTitle(doc.title);
+        setEditCategory(doc.categoryId || '');
+    };
+
+    const cancelEditDocument = () => {
+        setEditingDocId(null);
+        setEditTitle('');
+        setEditCategory('');
+    };
+
+    const saveEditDocument = async () => {
+        if (!editingDocId || !editTitle.trim()) return;
+
+        try {
+            const res = await fetch(`/api/documents/${editingDocId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: editTitle.trim(),
+                    categoryId: editCategory || null,
+                }),
+            });
+
+            if (res.ok) {
+                cancelEditDocument();
+                fetchDocuments();
+            } else {
+                alert('Erreur lors de la modification');
+            }
+        } catch (err) {
+            console.error('Error editing document:', err);
+            alert('Erreur lors de la modification');
         }
     };
 
@@ -238,29 +280,71 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
                                             )}
                                         </div>
                                         <div className="dark-doc-body">
-                                            <p className="dark-doc-title">{doc.title}</p>
-                                            <p className="dark-doc-category">{catInfo.name}</p>
-                                            <div className="dark-doc-actions">
-                                                {doc.filePath && doc.filePath !== '/demo/' && (
-                                                    <a
-                                                        href={doc.filePath}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="dark-doc-action-btn view"
+                                            {editingDocId === doc.id ? (
+                                                <div className="dark-doc-edit-form">
+                                                    <input
+                                                        type="text"
+                                                        className="form-input"
+                                                        value={editTitle}
+                                                        onChange={(e) => setEditTitle(e.target.value)}
+                                                        placeholder="Titre du document"
+                                                    />
+                                                    <select
+                                                        className="form-input"
+                                                        value={editCategory}
+                                                        onChange={(e) => setEditCategory(e.target.value)}
                                                     >
-                                                        👁️
-                                                    </a>
-                                                )}
-                                                <button
-                                                    className="dark-doc-action-btn delete"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDeleteDocument(doc.id);
-                                                    }}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
+                                                        <option value="">Catégorie...</option>
+                                                        <option value="cat_identity">🪪 Identité</option>
+                                                        <option value="cat_housing">🏠 Logement</option>
+                                                        <option value="cat_vehicle">🚗 Véhicule</option>
+                                                        <option value="cat_finance">💰 Finance</option>
+                                                        <option value="cat_health">🏥 Santé</option>
+                                                        <option value="cat_work">📜 Travail</option>
+                                                        <option value="cat_education">📚 Éducation</option>
+                                                        <option value="cat_family">👨‍👩‍👧 Famille</option>
+                                                    </select>
+                                                    <div className="dark-doc-edit-actions">
+                                                        <button className="dark-doc-action-btn save" onClick={saveEditDocument}>✓</button>
+                                                        <button className="dark-doc-action-btn cancel" onClick={cancelEditDocument}>✕</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <p className="dark-doc-title">{doc.title}</p>
+                                                    <p className="dark-doc-category">{catInfo.name}</p>
+                                                    <div className="dark-doc-actions">
+                                                        {doc.filePath && doc.filePath !== '/demo/' && (
+                                                            <a
+                                                                href={doc.filePath}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="dark-doc-action-btn view"
+                                                            >
+                                                                👁️
+                                                            </a>
+                                                        )}
+                                                        <button
+                                                            className="dark-doc-action-btn edit"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                startEditDocument(doc);
+                                                            }}
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                        <button
+                                                            className="dark-doc-action-btn delete"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteDocument(doc.id);
+                                                            }}
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 );

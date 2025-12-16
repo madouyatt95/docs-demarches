@@ -4100,3 +4100,51 @@ body {
 .dark-doc-action-btn.delete:hover {
     background: rgba(239, 68, 68, 0.25);
 }
+
+.dark-doc-action-btn.edit {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+}
+
+.dark-doc-action-btn.edit:hover {
+    background: rgba(245, 158, 11, 0.25);
+}
+
+.dark-doc-action-btn.save {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10B981;
+}
+
+.dark-doc-action-btn.save:hover {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.dark-doc-action-btn.cancel {
+    background: rgba(107, 114, 128, 0.15);
+    color: #6B7280;
+}
+
+.dark-doc-action-btn.cancel:hover {
+    background: rgba(107, 114, 128, 0.25);
+}
+
+.dark-doc-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dark-doc-edit-form .form-input {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+}
+
+.dark-doc-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
