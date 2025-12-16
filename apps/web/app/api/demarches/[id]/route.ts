@@ -112,6 +112,45 @@ export async function PATCH(
             if (error) throw error;
         }
 
+        // If adding a new step
+        if (body.addStep) {
+            // Get current max sortOrder
+            const { data: existingSteps } = await getSupabase()
+                .from('demarche_steps')
+                .select('sortOrder')
+                .eq('demarcheId', id)
+                .order('sortOrder', { ascending: false })
+                .limit(1);
+
+            const maxSortOrder = existingSteps && existingSteps.length > 0 ? existingSteps[0].sortOrder : -1;
+
+            const newStep = {
+                id: `step_${Date.now()}`,
+                demarcheId: id,
+                title: body.addStep.title,
+                description: body.addStep.description || null,
+                sortOrder: maxSortOrder + 1,
+                isCompleted: false,
+            };
+
+            const { error } = await getSupabase()
+                .from('demarche_steps')
+                .insert(newStep);
+
+            if (error) throw error;
+        }
+
+        // If removing a step
+        if (body.removeStepId) {
+            const { error } = await getSupabase()
+                .from('demarche_steps')
+                .delete()
+                .eq('id', body.removeStepId)
+                .eq('demarcheId', id);
+
+            if (error) throw error;
+        }
+
         // If updating the démarche itself
         if (body.status) {
             const { error } = await getSupabase()

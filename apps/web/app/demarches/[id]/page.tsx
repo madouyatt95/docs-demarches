@@ -143,6 +143,51 @@ export default function DemarcheDetailPage() {
         }
     };
 
+    const [newStepTitle, setNewStepTitle] = useState('');
+    const [showAddStep, setShowAddStep] = useState(false);
+
+    const handleAddStep = async () => {
+        if (!newStepTitle.trim()) return;
+
+        try {
+            const res = await fetch(`/api/demarches/${demarcheId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    addStep: {
+                        title: newStepTitle.trim(),
+                    },
+                }),
+            });
+
+            if (res.ok) {
+                setNewStepTitle('');
+                setShowAddStep(false);
+                fetchDemarche();
+            }
+        } catch (err) {
+            console.error('Error adding step:', err);
+        }
+    };
+
+    const handleRemoveStep = async (stepId: string) => {
+        if (!confirm('Supprimer cette étape ?')) return;
+
+        try {
+            const res = await fetch(`/api/demarches/${demarcheId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ removeStepId: stepId }),
+            });
+
+            if (res.ok) {
+                fetchDemarche();
+            }
+        } catch (err) {
+            console.error('Error removing step:', err);
+        }
+    };
+
     const progress = demarche
         ? (demarche.completedSteps / demarche.totalSteps) * 100
         : 0;
@@ -256,9 +301,56 @@ export default function DemarcheDetailPage() {
                                                     ⚠️ Document requis
                                                 </div>
                                             )}
+                                            <div className="demarche-step-actions">
+                                                <button
+                                                    className="demarche-step-remove"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveStep(step.id);
+                                                    }}
+                                                >
+                                                    🗑️ Supprimer
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
+
+                                {/* Add new step */}
+                                {showAddStep ? (
+                                    <div className="demarche-step" style={{ flexDirection: 'column', gap: '0.5rem' }}>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="Titre de l'étape..."
+                                            value={newStepTitle}
+                                            onChange={(e) => setNewStepTitle(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button
+                                                className="demarche-status-btn active"
+                                                onClick={handleAddStep}
+                                                disabled={!newStepTitle.trim()}
+                                            >
+                                                ✓ Ajouter
+                                            </button>
+                                            <button
+                                                className="demarche-status-btn"
+                                                onClick={() => { setShowAddStep(false); setNewStepTitle(''); }}
+                                            >
+                                                ✕ Annuler
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        className="demarche-add-step-btn"
+                                        onClick={() => setShowAddStep(true)}
+                                    >
+                                        ➕ Ajouter une étape
+                                    </button>
+                                )}
                             </div>
 
                             {/* Actions */}

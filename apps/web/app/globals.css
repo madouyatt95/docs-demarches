@@ -3852,3 +3852,159 @@ body {
 .demarche-status-btn:active {
     transform: scale(0.95);
 }
+
+/* ============================================
+   DARK DÉMARCHE LIST CARDS
+   ============================================ */
+
+.dark-demarche-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: transform 0.15s ease;
+}
+
+.dark-demarche-card:active {
+    transform: scale(0.98);
+}
+
+.dark-demarche-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    background: var(--gradient-purple);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.dark-demarche-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.dark-demarche-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 0.5rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dark-demarche-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.dark-demarche-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-full);
+    background: rgba(107, 114, 128, 0.2);
+    color: #9CA3AF;
+}
+
+.dark-demarche-badge.status-draft {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9CA3AF;
+}
+
+.dark-demarche-badge.status-progress {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3B82F6;
+}
+
+.dark-demarche-badge.status-waiting {
+    background: rgba(245, 158, 11, 0.2);
+    color: #F59E0B;
+}
+
+.dark-demarche-badge.status-completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+}
+
+.dark-demarche-badge.missing {
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+}
+
+.dark-demarche-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dark-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.dark-progress-fill {
+    height: 100%;
+    background: var(--gradient-green);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.dark-progress-text {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    min-width: 35px;
+    text-align: right;
+}
+
+.dark-demarche-chevron {
+    font-size: 1.5rem;
+    color: var(--color-text-tertiary);
+}
+
+/* Step add/remove buttons */
+.demarche-step-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.demarche-step-remove {
+    padding: 0.25rem 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+.demarche-add-step-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--color-surface);
+    color: var(--color-primary);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.15s ease;
+}
+
+.demarche-add-step-btn:hover {
+    border-color: var(--color-primary);
+    background: rgba(59, 130, 246, 0.05);
+}

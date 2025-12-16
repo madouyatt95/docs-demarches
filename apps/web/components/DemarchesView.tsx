@@ -339,38 +339,50 @@ export function DemarchesView() {
                                 }
                             };
 
+                            const templateIcons: Record<string, string> = {
+                                carte_grise: '🚗',
+                                passeport: '🪪',
+                                permis: '🪪',
+                                demenagement: '🚚',
+                                caf: '🏠',
+                                assurance: '🛡️',
+                                impots: '📊',
+                            };
+                            const icon = templateIcons[demarche.templateId] || '📋';
+
                             return (
                                 <Link
                                     key={demarche.id}
                                     href={`/demarches/${demarche.id}`}
                                     style={{ textDecoration: 'none' }}
                                 >
-                                    <div className="ios-demarche-card">
-                                        <div className="ios-demarche-header">
-                                            <div className="ios-demarche-badges">
-                                                <span className={`ios-demarche-badge ${getStatusClass(demarche.status)}`}>
+                                    <div className="dark-demarche-card">
+                                        <div className="dark-demarche-icon">{icon}</div>
+                                        <div className="dark-demarche-content">
+                                            <h3 className="dark-demarche-title">{demarche.title}</h3>
+                                            <div className="dark-demarche-meta">
+                                                <span className={`dark-demarche-badge ${getStatusClass(demarche.status)}`}>
                                                     {status.label}
                                                 </span>
                                                 {demarche.missingPieces > 0 && (
-                                                    <span className="ios-demarche-badge missing">
+                                                    <span className="dark-demarche-badge missing">
                                                         {demarche.missingPieces} manquante(s)
                                                     </span>
                                                 )}
                                             </div>
-                                            <span className="ios-demarche-chevron">›</span>
-                                        </div>
-                                        <h3 className="ios-demarche-title">{demarche.title}</h3>
-                                        <div className="ios-demarche-progress">
-                                            <div className="ios-progress-bar">
-                                                <div
-                                                    className="ios-progress-fill"
-                                                    style={{ width: `${progress}%` }}
-                                                />
+                                            <div className="dark-demarche-progress">
+                                                <div className="dark-progress-bar">
+                                                    <div
+                                                        className="dark-progress-fill"
+                                                        style={{ width: `${progress}%` }}
+                                                    />
+                                                </div>
+                                                <span className="dark-progress-text">
+                                                    {demarche.completedSteps}/{demarche.totalSteps}
+                                                </span>
                                             </div>
-                                            <span className="ios-progress-text">
-                                                {demarche.completedSteps}/{demarche.totalSteps}
-                                            </span>
                                         </div>
+                                        <span className="dark-demarche-chevron">›</span>
                                     </div>
                                 </Link>
                             );
