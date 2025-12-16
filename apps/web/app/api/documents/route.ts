@@ -96,6 +96,57 @@ export async function POST(request: NextRequest) {
             throw error;
         }
 
+        // ====================================
+        // AUTO-LINK: Find démarche steps that need this document type
+        // ====================================
+        const documentType = body.documentType || body.categoryId;
+        if (documentType) {
+            try {
+                // Map category IDs to document types used in démarche steps
+                const categoryToTypeMap: Record<string, string[]> = {
+                    'cat_identity': ['identite', 'passeport', 'cni'],
+                    'cat_housing': ['domicile', 'bail', 'quittance'],
+                    'cat_vehicle': ['carte_grise', 'permis', 'controle_technique'],
+                    'cat_finance': ['rib', 'impots', 'salaire', 'avis_imposition'],
+                    'cat_health': ['mutuelle', 'securite_sociale', 'vaccination'],
+                    'cat_education': ['diplome', 'certificat', 'attestation'],
+                    'cat_work': ['contrat', 'salaire', 'attestation_employeur'],
+                    'cat_family': ['livret_famille', 'acte_naissance', 'mariage'],
+                };
+
+                const matchingTypes = categoryToTypeMap[documentType] || [documentType];
+
+                // Find all unlinked, uncompleted steps that require one of these types
+                const { data: matchingSteps } = await getSupabase()
+                    .from('demarche_steps')
+                    .select('id, demarcheId, requiredDocumentType')
+                    .in('requiredDocumentType', matchingTypes)
+                    .is('documentId', null)
+                    .eq('isCompleted', false);
+
+                // Link this document to all matching steps
+                if (matchingSteps && matchingSteps.length > 0) {
+                    const updatePromises = matchingSteps.map(step =>
+                        getSupabase()
+                            .from('demarche_steps')
+                            .update({
+                                documentId: data.id,
+                                isCompleted: true,
+                                completedAt: new Date().toISOString(),
+                            })
+                            .eq('id', step.id)
+                    );
+
+                    await Promise.all(updatePromises);
+
+                    console.log(`Auto-linked document ${data.id} to ${matchingSteps.length} démarche step(s)`);
+                }
+            } catch (linkError) {
+                console.warn('Auto-link failed (non-critical):', linkError);
+                // Don't fail the document creation if auto-link fails
+            }
+        }
+
         return NextResponse.json(data, { status: 201 });
     } catch (error: any) {
         console.error('Error creating document:', error);
