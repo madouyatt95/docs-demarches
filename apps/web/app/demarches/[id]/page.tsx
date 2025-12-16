@@ -9,6 +9,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Sidebar } from '@/components/Sidebar';
 import { MobileNav } from '@/components/MobileNav';
+import { NearbyServices } from '@/components/NearbyServices';
 
 interface Step {
     id: string;
@@ -73,6 +74,7 @@ export default function DemarcheDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectingStepId, setSelectingStepId] = useState<string | null>(null);
+    const [showNearbyServices, setShowNearbyServices] = useState(false);
 
     const fetchDemarche = useCallback(async () => {
         if (!demarcheId) return;
@@ -336,6 +338,17 @@ export default function DemarcheDetailPage() {
                                 ))}
                             </div>
 
+                            {/* Geolocation button */}
+                            <div className="dark-section-header" style={{ marginTop: '1.5rem' }}>
+                                <h2 className="dark-section-title">📍 Services proches</h2>
+                            </div>
+                            <button
+                                className="demarche-geo-btn"
+                                onClick={() => setShowNearbyServices(true)}
+                            >
+                                🗺️ Trouver une mairie, préfecture, CAF...
+                            </button>
+
                             {/* Checklist */}
                             <div className="dark-section-header">
                                 <h2 className="dark-section-title">📋 Checklist</h2>
@@ -478,6 +491,15 @@ export default function DemarcheDetailPage() {
                     )}
                 </div>
             </main>
+
+            {/* Nearby services modal */}
+            {showNearbyServices && (
+                <NearbyServices
+                    defaultType="mairie"
+                    onClose={() => setShowNearbyServices(false)}
+                />
+            )}
+
             <MobileNav />
         </div>
     );
