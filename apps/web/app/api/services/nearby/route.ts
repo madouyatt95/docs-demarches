@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'mairie';
     const postalCode = searchParams.get('postalCode');
 
+    console.log('[Services API] Request params:', { lat, lng, type, postalCode });
+
     try {
         let services: ServiceResult[] = [];
 
-        // Use the French Annuaire API (service-public.fr)
-        // API: https://api-lannuaire.service-public.fr
+        // Use the French Annuaire API
         const baseUrl = 'https://api-lannuaire.service-public.fr/api/explore/v2.1/catalog/datasets/api-lannuaire-administration/records';
 
         // Map our types to API types
@@ -43,65 +44,78 @@ export async function GET(request: NextRequest) {
             'sous_prefecture': 'sous_prefecture',
             'caf': 'caf',
             'cpam': 'cpam',
-            'pole_emploi': 'pole_emploi',
+            'pole_emploi': 'pe',
             'tresorerie': 'tresorerie',
             'tribunal': 'ti',
         };
 
         const apiType = typeMapping[type] || 'mairie';
 
-        let whereClause = `type_service_local="${apiType}"`;
+        // Build query
+        let queryParams = new URLSearchParams();
+        queryParams.set('limit', '15');
 
-        // If we have coordinates, search by distance
-        if (lat && lng) {
-            const latitude = parseFloat(lat);
-            const longitude = parseFloat(lng);
+        if (postalCode) {
+            // Search by postal code - simpler query
+            queryParams.set('where', `code_postal="${postalCode}"`);
+        } else if (lat && lng) {
+            // For geo search, we'll search broadly and filter
+            const dept = '75'; // Default to Paris area, will be improved
+            queryParams.set('where', `type_service_local="${apiType}"`);
+        } else {
+            // Default search
+            queryParams.set('where', `type_service_local="${apiType}"`);
+        }
 
-            // Use geofilter for nearby search (within 50km)
-            const url = `${baseUrl}?limit=10&where=${encodeURIComponent(whereClause)}&geofilter.distance=${latitude},${longitude},50000`;
+        const url = `${baseUrl}?${queryParams.toString()}`;
+        console.log('[Services API] Fetching:', url);
 
-            console.log('[Services API] Fetching:', url);
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
 
-            const response = await fetch(url);
-            if (response.ok) {
-                const data = await response.json();
-                services = (data.results || []).map((item: any) => ({
-                    id: item.id || String(Math.random()),
-                    name: item.nom || 'Service public',
-                    type: item.type_service_local || type,
-                    address: item.adresse || '',
-                    postalCode: item.code_postal || '',
-                    city: item.nom_commune || '',
-                    phone: item.telephone || null,
-                    email: item.email || null,
-                    url: item.url || null,
-                    latitude: item.latitude,
-                    longitude: item.longitude,
-                }));
-            }
-        } else if (postalCode) {
-            // Search by postal code
-            whereClause += ` AND code_postal="${postalCode}"`;
-            const url = `${baseUrl}?limit=10&where=${encodeURIComponent(whereClause)}`;
+        console.log('[Services API] Response status:', response.status);
 
-            console.log('[Services API] Fetching by postal code:', url);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[Services API] Error response:', errorText);
+            throw new Error(`API error: ${response.status}`);
+        }
 
-            const response = await fetch(url);
-            if (response.ok) {
-                const data = await response.json();
-                services = (data.results || []).map((item: any) => ({
-                    id: item.id || String(Math.random()),
-                    name: item.nom || 'Service public',
-                    type: item.type_service_local || type,
-                    address: item.adresse || '',
-                    postalCode: item.code_postal || '',
-                    city: item.nom_commune || '',
-                    phone: item.telephone || null,
-                    email: item.email || null,
-                    url: item.url || null,
-                    latitude: item.latitude,
-                    longitude: item.longitude,
-                }));
+        const data = await response.json();
+        console.log('[Services API] Results count:', data.total_count || data.results?.length || 0);
+
+        // Parse results - adapt to actual API response structure
+        if (data.results && Array.isArray(data.results)) {
+            services = data.results.map((item: any) => {
+                // The API returns nested structure
+                const fields = item;
+                return {
+                    id: fields.id || fields.identifiant || String(Math.random()),
+                    name: fields.nom || fields.name || 'Service public',
+                    type: fields.type_service_local || fields.pivot_local || type,
+                    address: fields.adresse || fields.adresse_courriel || '',
+                    postalCode: fields.code_postal || '',
+                    city: fields.nom_commune || fields.commune || '',
+                    phone: fields.telephone || fields.tel || null,
+                    email: fields.adresse_courriel || fields.email || null,
+                    url: fields.site_internet || fields.url || null,
+                    latitude: fields.latitude ? parseFloat(fields.latitude) : null,
+                    longitude: fields.longitude ? parseFloat(fields.longitude) : null,
+                };
+            });
+        }
+
+        // Filter by type if we have results
+        if (apiType && services.length > 0) {
+            const filtered = services.filter(s =>
+                s.type?.toLowerCase().includes(apiType.toLowerCase()) ||
+                s.name?.toLowerCase().includes(apiType.toLowerCase())
+            );
+            if (filtered.length > 0) {
+                services = filtered;
             }
         }
 
@@ -121,16 +135,23 @@ export async function GET(request: NextRequest) {
             }).sort((a, b) => (a.distance || 999) - (b.distance || 999));
         }
 
+        console.log('[Services API] Returning', services.length, 'services');
+
         return NextResponse.json({
             services,
             total: services.length,
             searchType: type,
+            debug: {
+                url,
+                resultCount: data.results?.length,
+                firstResult: data.results?.[0]
+            },
         });
 
     } catch (error: any) {
         console.error('Error fetching services:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch services', details: error.message },
+            { error: 'Failed to fetch services', details: error.message, services: [] },
             { status: 500 }
         );
     }
