@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
                 address: `Rechercher sur Google Maps`,
                 postalCode: postalCode,
                 city: location,
-                phone: null,
+                phone: undefined,
                 url: `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`,
             },
         ];
