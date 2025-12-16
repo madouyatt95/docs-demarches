@@ -17,6 +17,7 @@ interface SharedDocument {
 interface ShareData {
     document: SharedDocument | null;
     pack: { id: string; name: string } | null;
+    packDocuments: SharedDocument[];
     expiresAt: string;
 }
 
@@ -76,9 +77,9 @@ export default function SharePage() {
         fetchShareData(password);
     };
 
-    const handleDownload = () => {
-        if (shareData?.document?.filePath) {
-            window.open(shareData.document.filePath, '_blank');
+    const handleDownload = (filePath: string) => {
+        if (filePath) {
+            window.open(filePath, '_blank');
         }
     };
 
@@ -101,7 +102,7 @@ export default function SharePage() {
             <div className="share-container">
                 <div className="share-header">
                     <div className="share-logo">📦 DocsBox</div>
-                    <h1>Document partagé</h1>
+                    <h1>{shareData?.pack ? 'Pack partagé' : 'Document partagé'}</h1>
                 </div>
 
                 {isLoading && (
@@ -136,6 +137,7 @@ export default function SharePage() {
                     </form>
                 )}
 
+                {/* Single document */}
                 {shareData?.document && (
                     <div className="share-document">
                         <div className="share-doc-icon">📄</div>
@@ -143,9 +145,38 @@ export default function SharePage() {
                         <p className="share-doc-type">{shareData.document.mimeType}</p>
                         <p className="share-doc-expires">{getTimeLeft()}</p>
 
-                        <button onClick={handleDownload} className="share-download-btn">
+                        <button onClick={() => handleDownload(shareData.document!.filePath)} className="share-download-btn">
                             📥 Télécharger
                         </button>
+                    </div>
+                )}
+
+                {/* Pack with multiple documents */}
+                {shareData?.pack && (
+                    <div className="share-pack">
+                        <div className="share-pack-icon">📦</div>
+                        <h2 className="share-pack-title">{shareData.pack.name}</h2>
+                        <p className="share-doc-expires">{getTimeLeft()}</p>
+                        <p className="share-pack-count">{shareData.packDocuments?.length || 0} documents</p>
+
+                        {shareData.packDocuments && shareData.packDocuments.length > 0 ? (
+                            <div className="share-docs-list">
+                                {shareData.packDocuments.map((doc) => (
+                                    <div key={doc.id} className="share-doc-item">
+                                        <span className="share-doc-item-icon">📄</span>
+                                        <span className="share-doc-item-title">{doc.title}</span>
+                                        <button
+                                            onClick={() => handleDownload(doc.filePath)}
+                                            className="share-doc-item-btn"
+                                        >
+                                            📥
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="share-empty">Aucun document dans ce pack</p>
+                        )}
                     </div>
                 )}
 
@@ -281,6 +312,65 @@ export default function SharePage() {
                 .share-download-btn:hover {
                     background: #059669;
                     transform: scale(1.05);
+                }
+                .share-pack {
+                    padding: 1rem;
+                    text-align: center;
+                }
+                .share-pack-icon {
+                    font-size: 4rem;
+                    margin-bottom: 1rem;
+                }
+                .share-pack-title {
+                    font-size: 1.25rem;
+                    color: white;
+                    margin: 0 0 0.5rem;
+                }
+                .share-pack-count {
+                    color: #6B7280;
+                    font-size: 0.85rem;
+                    margin: 0 0 1rem;
+                }
+                .share-docs-list {
+                    text-align: left;
+                    margin: 1rem 0;
+                }
+                .share-doc-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.75rem;
+                    background: #111827;
+                    border-radius: 0.5rem;
+                    margin-bottom: 0.5rem;
+                }
+                .share-doc-item-icon {
+                    font-size: 1.25rem;
+                }
+                .share-doc-item-title {
+                    flex: 1;
+                    color: white;
+                    font-size: 0.9rem;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .share-doc-item-btn {
+                    padding: 0.5rem 0.75rem;
+                    background: #10B981;
+                    color: white;
+                    border: none;
+                    border-radius: 0.5rem;
+                    cursor: pointer;
+                    font-size: 1rem;
+                }
+                .share-doc-item-btn:hover {
+                    background: #059669;
+                }
+                .share-empty {
+                    color: #6B7280;
+                    text-align: center;
+                    padding: 1rem;
                 }
                 .share-footer {
                     margin-top: 2rem;

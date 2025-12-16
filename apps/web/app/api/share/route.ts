@@ -140,9 +140,23 @@ export async function GET(request: NextRequest) {
             .update({ downloadCount: (shareLink.downloadCount || 0) + 1 })
             .eq('id', shareLink.id);
 
+        // If it's a pack, fetch the documents in the pack
+        let packDocuments: any[] = [];
+        if (shareLink.pack && shareLink.packId) {
+            const { data: packDocs } = await getSupabase()
+                .from('pack_documents')
+                .select(`
+                    document:documents(id, title, filePath, mimeType)
+                `)
+                .eq('packId', shareLink.packId);
+
+            packDocuments = packDocs?.map((pd: any) => pd.document).filter(Boolean) || [];
+        }
+
         return NextResponse.json({
             document: shareLink.document,
             pack: shareLink.pack,
+            packDocuments,
             expiresAt: shareLink.expiresAt,
         });
     } catch (error: any) {
