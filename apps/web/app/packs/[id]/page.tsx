@@ -46,6 +46,8 @@ export default function PackDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [shareUrl, setShareUrl] = useState('');
     const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
 
     const fetchPack = useCallback(async () => {
@@ -232,17 +234,8 @@ export default function PackDetailPage() {
                             });
                             const data = await res.json();
                             if (data.shareUrl) {
-                                // Use prompt for iOS compatibility - user can copy from here
-                                const copied = prompt(
-                                    '📋 Lien de partage (expire dans 7 jours)\n\nCopiez le lien ci-dessous :',
-                                    data.shareUrl
-                                );
-                                // Also try clipboard as fallback for desktop
-                                try {
-                                    await navigator.clipboard.writeText(data.shareUrl);
-                                } catch (e) {
-                                    // Ignore clipboard errors on iOS
-                                }
+                                setShareUrl(data.shareUrl);
+                                setShowShareModal(true);
                             } else {
                                 alert('Erreur: ' + (data.error || 'Impossible de créer le lien'));
                             }
@@ -342,6 +335,55 @@ export default function PackDetailPage() {
                             className="ios-modal-btn secondary"
                         >
                             Annuler
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Share modal */}
+            {showShareModal && (
+                <div className="ios-modal-backdrop" onClick={() => setShowShareModal(false)}>
+                    <div className="ios-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="ios-modal-handle"></div>
+                        <h2 className="ios-modal-title">🔗 Lien de partage</h2>
+
+                        <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                            Ce lien expire dans 7 jours
+                        </p>
+
+                        <input
+                            type="text"
+                            value={shareUrl}
+                            readOnly
+                            className="ios-modal-input"
+                            style={{ marginBottom: '1rem', fontSize: '0.8rem' }}
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                        />
+
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await navigator.clipboard.writeText(shareUrl);
+                                    alert('✅ Lien copié !');
+                                } catch (e) {
+                                    // Fallback for iOS - select the text
+                                    const input = document.querySelector('.ios-modal-input') as HTMLInputElement;
+                                    if (input) {
+                                        input.select();
+                                        document.execCommand('copy');
+                                        alert('✅ Lien copié !');
+                                    }
+                                }
+                            }}
+                            className="ios-modal-btn primary"
+                        >
+                            📋 Copier le lien
+                        </button>
+                        <button
+                            onClick={() => setShowShareModal(false)}
+                            className="ios-modal-btn secondary"
+                        >
+                            Fermer
                         </button>
                     </div>
                 </div>
