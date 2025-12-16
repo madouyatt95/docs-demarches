@@ -30,16 +30,17 @@ interface ApiResponse {
     totalPages: number;
 }
 
-// Category configuration with emojis
-const categoryConfig: Record<string, { emoji: string; color: string; name: string }> = {
-    'cat_identity': { emoji: '🪪', color: '#3B82F6', name: 'Identité' },
-    'cat_housing': { emoji: '🏠', color: '#10B981', name: 'Logement' },
-    'cat_work': { emoji: '💼', color: '#8B5CF6', name: 'Travail' },
-    'cat_vehicle': { emoji: '🚗', color: '#F59E0B', name: 'Véhicule' },
-    'cat_finance': { emoji: '💰', color: '#EF4444', name: 'Finance' },
-    'cat_health': { emoji: '🏥', color: '#EC4899', name: 'Santé' },
-    'cat_education': { emoji: '🎓', color: '#06B6D4', name: 'Éducation' },
-    'default': { emoji: '📄', color: '#6B7280', name: 'Autre' },
+// Category configuration with emojis and validity periods (in months)
+const categoryConfig: Record<string, { emoji: string; color: string; name: string; validityMonths?: number }> = {
+    'cat_identity': { emoji: '🪪', color: '#3B82F6', name: 'Identité', validityMonths: undefined }, // No expiry for ID
+    'cat_housing': { emoji: '🏠', color: '#10B981', name: 'Logement', validityMonths: 3 }, // 3 months for domicile
+    'cat_work': { emoji: '💼', color: '#8B5CF6', name: 'Travail', validityMonths: 1 }, // 1 month for payslips
+    'cat_vehicle': { emoji: '🚗', color: '#F59E0B', name: 'Véhicule', validityMonths: 6 }, // 6 months for control technique
+    'cat_finance': { emoji: '💰', color: '#EF4444', name: 'Finance', validityMonths: 3 }, // 3 months for RIB/statements
+    'cat_health': { emoji: '🏥', color: '#EC4899', name: 'Santé', validityMonths: 6 },
+    'cat_education': { emoji: '🎓', color: '#06B6D4', name: 'Éducation', validityMonths: 12 },
+    'cat_family': { emoji: '👨‍👩‍👧', color: '#8B5CF6', name: 'Famille', validityMonths: undefined },
+    'default': { emoji: '📄', color: '#6B7280', name: 'Autre', validityMonths: undefined },
 };
 
 function daysUntil(dateStr: string): number {
@@ -47,6 +48,38 @@ function daysUntil(dateStr: string): number {
     const now = new Date();
     const diff = date.getTime() - now.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+// Calculate document age in days
+function daysSinceCreation(dateStr: string): number {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
+
+// Check if document is expiring based on category validity period
+function isDocumentExpiring(doc: Document): { expiring: boolean; daysLeft: number; reason: string } {
+    const catInfo = getCategoryInfo(doc.categoryId);
+
+    // If document has explicit expiration date
+    if (doc.expirationDate) {
+        const days = daysUntil(doc.expirationDate);
+        if (days <= 0) return { expiring: true, daysLeft: days, reason: 'Expiré' };
+        if (days <= 30) return { expiring: true, daysLeft: days, reason: `Expire dans ${days}j` };
+    }
+
+    // Check category-based validity
+    if (catInfo.validityMonths) {
+        const age = daysSinceCreation(doc.createdAt);
+        const maxDays = catInfo.validityMonths * 30;
+        const daysLeft = maxDays - age;
+
+        if (daysLeft <= 0) return { expiring: true, daysLeft: 0, reason: `Ancien (+${catInfo.validityMonths} mois)` };
+        if (daysLeft <= 30) return { expiring: true, daysLeft, reason: `Validité ${daysLeft}j` };
+    }
+
+    return { expiring: false, daysLeft: 999, reason: '' };
 }
 
 function getCategoryInfo(categoryId: string | null) {
@@ -74,11 +107,10 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
     const [editTitle, setEditTitle] = useState('');
     const [editCategory, setEditCategory] = useState('');
 
-    // Count expiring documents
+    // Count expiring documents using category-based validity
     const expiringDocs = documents.filter(doc => {
-        if (!doc.expirationDate) return false;
-        const days = daysUntil(doc.expirationDate);
-        return days > 0 && days <= 30;
+        const status = isDocumentExpiring(doc);
+        return status.expiring;
     });
 
     const fetchDocuments = useCallback(async () => {
@@ -262,20 +294,18 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
                         <div className="dark-docs-grid">
                             {documents.slice(0, 6).map((doc) => {
                                 const catInfo = getCategoryInfo(doc.categoryId);
-                                const expiresIn = doc.expirationDate ? daysUntil(doc.expirationDate) : null;
-                                const isExpiring = expiresIn !== null && expiresIn <= 30 && expiresIn > 0;
-                                const isExpired = expiresIn !== null && expiresIn <= 0;
+                                const expirationStatus = isDocumentExpiring(doc);
 
                                 return (
-                                    <div key={doc.id} className="dark-doc-card">
+                                    <div key={doc.id} className={`dark-doc-card ${expirationStatus.expiring ? 'expiring' : ''}`}>
                                         <div
                                             className="dark-doc-header"
                                             style={{ background: `linear-gradient(135deg, ${catInfo.color}40 0%, ${catInfo.color}20 100%)` }}
                                         >
                                             <span className="dark-doc-emoji">{catInfo.emoji}</span>
-                                            {(isExpiring || isExpired) && (
-                                                <span className={`dark-doc-badge ${isExpired ? 'expired' : 'warning'}`}>
-                                                    {isExpired ? '⚠️' : `${expiresIn}j`}
+                                            {expirationStatus.expiring && (
+                                                <span className={`dark-doc-badge ${expirationStatus.daysLeft <= 0 ? 'expired' : 'warning'}`}>
+                                                    ⚠️ {expirationStatus.reason}
                                                 </span>
                                             )}
                                         </div>

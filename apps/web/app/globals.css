@@ -4322,3 +4322,69 @@ body {
     color: var(--color-text, white) !important;
     border-color: var(--color-border, #374151) !important;
 }
+
+/* Expiring document styles */
+.dark-doc-card.expiring {
+    border: 2px solid #F59E0B;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.dark-doc-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+}
+
+.dark-doc-badge.warning {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.dark-doc-badge.expired {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+
+.dark-doc-header {
+    position: relative;
+}
+
+/* Alert card for expiring documents */
+.dark-expiring-alert {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dark-expiring-alert-icon {
+    font-size: 1.5rem;
+    background: white;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+}
+
+.dark-expiring-alert-content {
+    flex: 1;
+}
+
+.dark-expiring-alert-title {
+    font-weight: 600;
+    color: #92400E;
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+}
+
+.dark-expiring-alert-text {
+    font-size: 0.75rem;
+    color: #B45309;
+    margin: 0;
+}
