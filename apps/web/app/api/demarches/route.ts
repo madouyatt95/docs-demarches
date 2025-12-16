@@ -180,13 +180,101 @@ export async function POST(request: NextRequest) {
             }));
 
             await getSupabase().from('demarche_steps').insert(steps);
+
+            // ====================================
+            // AUTO-LINK: Check if existing documents match any step requirements
+            // ====================================
+            try {
+                // Map document types to category IDs
+                const typeToCategoryMap: Record<string, string[]> = {
+                    'identite': ['cat_identity'],
+                    'passeport': ['cat_identity'],
+                    'cni': ['cat_identity'],
+                    'domicile': ['cat_housing'],
+                    'bail': ['cat_housing'],
+                    'quittance': ['cat_housing'],
+                    'carte_grise': ['cat_vehicle'],
+                    'permis': ['cat_vehicle'],
+                    'controle_technique': ['cat_vehicle'],
+                    'rib': ['cat_finance'],
+                    'impots': ['cat_finance'],
+                    'salaire': ['cat_finance', 'cat_work'],
+                };
+
+                // Get unique required document types from steps
+                const requiredTypes = [...new Set(
+                    steps
+                        .filter((s: any) => s.requiredDocumentType)
+                        .map((s: any) => s.requiredDocumentType)
+                )];
+
+                if (requiredTypes.length > 0) {
+                    // Get corresponding category IDs
+                    const categoryIds: string[] = [];
+                    requiredTypes.forEach(type => {
+                        const cats = typeToCategoryMap[type] || [];
+                        categoryIds.push(...cats);
+                    });
+
+                    if (categoryIds.length > 0) {
+                        // Find existing documents with matching categories
+                        const { data: existingDocs } = await getSupabase()
+                            .from('documents')
+                            .select('id, categoryId, title')
+                            .in('categoryId', categoryIds)
+                            .eq('userId', 'demo_user');
+
+                        if (existingDocs && existingDocs.length > 0) {
+                            // Build reverse map: category -> document
+                            const categoryToDoc: Record<string, string> = {};
+                            existingDocs.forEach(doc => {
+                                if (doc.categoryId) {
+                                    categoryToDoc[doc.categoryId] = doc.id;
+                                }
+                            });
+
+                            // Update steps with matching documents
+                            for (const step of steps) {
+                                if (!step.requiredDocumentType) continue;
+
+                                const matchingCategories = typeToCategoryMap[step.requiredDocumentType] || [];
+                                for (const catId of matchingCategories) {
+                                    if (categoryToDoc[catId]) {
+                                        await getSupabase()
+                                            .from('demarche_steps')
+                                            .update({
+                                                documentId: categoryToDoc[catId],
+                                                isCompleted: true,
+                                                completedAt: new Date().toISOString(),
+                                            })
+                                            .eq('id', step.id);
+
+                                        console.log(`Auto-linked existing doc to step ${step.id}`);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (linkError) {
+                console.warn('Auto-link existing docs failed (non-critical):', linkError);
+            }
         }
+
+        // Recalculate completed steps
+        const { data: updatedSteps } = await getSupabase()
+            .from('demarche_steps')
+            .select('isCompleted')
+            .eq('demarcheId', data.id);
+
+        const completedCount = updatedSteps?.filter((s: any) => s.isCompleted).length || 0;
 
         return NextResponse.json({
             ...data,
             status: data.status?.toLowerCase() || 'draft',
             steps: [],
-            completedSteps: 0,
+            completedSteps: completedCount,
             totalSteps: stepsToInsert.length,
             missingPieces: 0,
         }, { status: 201 });
