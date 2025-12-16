@@ -4148,3 +4148,155 @@ body {
     gap: 0.5rem;
     justify-content: flex-end;
 }
+
+/* Pack detail page styles */
+.dark-back-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.dark-back-link:hover {
+    text-decoration: underline;
+}
+
+.dark-pack-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    background: var(--dark-card-bg);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dark-pack-icon-large {
+    font-size: 3rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+}
+
+.dark-pack-header-info {
+    flex: 1;
+}
+
+.dark-pack-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 0.25rem;
+}
+
+.dark-pack-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin: 0 0 0.25rem;
+}
+
+.dark-pack-meta {
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.dark-pack-actions-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.dark-pack-action-btn {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dark-pack-action-btn.primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.dark-pack-action-btn.primary:hover {
+    background: #2563EB;
+}
+
+.dark-docs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dark-doc-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--dark-card-bg);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+}
+
+.dark-doc-list-icon {
+    font-size: 1.5rem;
+}
+
+.dark-doc-list-info {
+    flex: 1;
+}
+
+.dark-doc-list-title {
+    font-weight: 500;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.dark-doc-list-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin: 0.25rem 0 0;
+}
+
+.dark-doc-list-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dark-modal-doc-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.dark-modal-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.dark-modal-doc-item:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.dark-modal-doc-item input {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.dark-modal-doc-icon {
+    font-size: 1.25rem;
+}
+
+.dark-modal-doc-title {
+    flex: 1;
+    font-size: 0.9rem;
+}
