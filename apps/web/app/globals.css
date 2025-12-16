@@ -2626,10 +2626,11 @@ body {
    ============================================ */
 
 .dark-container {
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
     padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 2rem);
     min-height: 100vh;
     background-color: var(--color-background);
+    overflow-x: hidden;
 }
 
 /* Stats Card */
