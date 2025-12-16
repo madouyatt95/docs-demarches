@@ -79,8 +79,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/demarches
 export async function POST(request: NextRequest) {
+    console.log('[Demarches API] POST v2 - Dec 16 16:15 - with auto-link fix');
     try {
         const body = await request.json();
+        console.log('[Demarches API] Creating demarche with templateId:', body.templateId);
 
         // Predefined steps for each template
         const templateSteps: Record<string, Array<{ title: string; description?: string; requiredDocumentType?: string }>> = {
@@ -205,11 +207,11 @@ export async function POST(request: NextRequest) {
                 };
 
                 // Get unique required document types from steps
-                const requiredTypes = [...new Set(
+                const requiredTypes: string[] = Array.from(new Set(
                     steps
                         .filter((s: any) => s.requiredDocumentType)
                         .map((s: any) => s.requiredDocumentType)
-                )];
+                ));
 
                 console.log('[Auto-link] Required types:', requiredTypes);
 
@@ -221,7 +223,7 @@ export async function POST(request: NextRequest) {
                         categoryIds.push(...cats);
                     });
 
-                    console.log('[Auto-link] Looking for categories:', [...new Set(categoryIds)]);
+                    console.log('[Auto-link] Looking for categories:', Array.from(new Set(categoryIds)));
 
                     // Fetch ALL user documents (simpler, more reliable than .in())
                     const { data: allDocs, error: docsError } = await getSupabase()
@@ -232,7 +234,7 @@ export async function POST(request: NextRequest) {
                     console.log('[Auto-link] Total user docs:', allDocs?.length || 0);
 
                     // Filter to matching categories
-                    const uniqueCats = [...new Set(categoryIds)];
+                    const uniqueCats = Array.from(new Set(categoryIds));
                     const existingDocs = allDocs?.filter(doc =>
                         doc.categoryId && uniqueCats.includes(doc.categoryId)
                     ) || [];
