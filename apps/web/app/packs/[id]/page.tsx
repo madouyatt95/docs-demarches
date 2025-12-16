@@ -232,8 +232,19 @@ export default function PackDetailPage() {
                             });
                             const data = await res.json();
                             if (data.shareUrl) {
-                                await navigator.clipboard.writeText(data.shareUrl);
-                                alert(`Lien copié !\n\n${data.shareUrl}\n\nExpire dans 7 jours`);
+                                // Use prompt for iOS compatibility - user can copy from here
+                                const copied = prompt(
+                                    '📋 Lien de partage (expire dans 7 jours)\n\nCopiez le lien ci-dessous :',
+                                    data.shareUrl
+                                );
+                                // Also try clipboard as fallback for desktop
+                                try {
+                                    await navigator.clipboard.writeText(data.shareUrl);
+                                } catch (e) {
+                                    // Ignore clipboard errors on iOS
+                                }
+                            } else {
+                                alert('Erreur: ' + (data.error || 'Impossible de créer le lien'));
                             }
                         } catch (err) {
                             console.error('Share error:', err);
