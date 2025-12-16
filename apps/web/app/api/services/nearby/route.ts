@@ -16,12 +16,10 @@ interface ServiceResult {
     phone?: string;
     email?: string;
     url?: string;
-    latitude?: number;
-    longitude?: number;
     distance?: number;
 }
 
-// GET /api/services/nearby?lat=xxx&lng=xxx&type=mairie
+// GET /api/services/nearby?postalCode=75001&type=mairie
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const lat = searchParams.get('lat');
@@ -29,110 +27,96 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'mairie';
     const postalCode = searchParams.get('postalCode');
 
-    console.log('[Services API] Request params:', { lat, lng, type, postalCode });
+    console.log('[Services API] Request:', { lat, lng, type, postalCode });
 
     try {
         let services: ServiceResult[] = [];
 
-        // Use the French Annuaire API
-        const baseUrl = 'https://api-lannuaire.service-public.fr/api/explore/v2.1/catalog/datasets/api-lannuaire-administration/records';
+        // Use geo.api.gouv.fr to get commune code from postal code
+        let cityCode = '';
+        let cityName = '';
 
-        // Map our types to API types
+        if (postalCode) {
+            const geoUrl = `https://geo.api.gouv.fr/communes?codePostal=${postalCode}&fields=code,nom&limit=1`;
+            console.log('[Services API] Getting city code from:', geoUrl);
+
+            const geoRes = await fetch(geoUrl);
+            if (geoRes.ok) {
+                const geoData = await geoRes.json();
+                if (geoData.length > 0) {
+                    cityCode = geoData[0].code;
+                    cityName = geoData[0].nom;
+                    console.log('[Services API] Found city:', cityName, 'code:', cityCode);
+                }
+            }
+        }
+
+        if (!cityCode && !lat) {
+            // Default to Paris 1er
+            cityCode = '75101';
+            cityName = 'Paris 1er';
+        }
+
+        // Map our types to API type codes
         const typeMapping: Record<string, string> = {
             'mairie': 'mairie',
             'prefecture': 'prefecture',
             'sous_prefecture': 'sous_prefecture',
             'caf': 'caf',
             'cpam': 'cpam',
-            'pole_emploi': 'pe',
-            'tresorerie': 'tresorerie',
+            'pole_emploi': 'pole_emploi',
+            'tresorerie': 'ddfip',
             'tribunal': 'ti',
         };
 
         const apiType = typeMapping[type] || 'mairie';
 
-        // Build query
-        let queryParams = new URLSearchParams();
-        queryParams.set('limit', '15');
+        // Use etablissements-publics API
+        const baseUrl = `https://etablissements-publics.api.gouv.fr/v3/communes/${cityCode}/${apiType}`;
+        console.log('[Services API] Fetching:', baseUrl);
 
-        if (postalCode) {
-            // Search by postal code - simpler query
-            queryParams.set('where', `code_postal="${postalCode}"`);
-        } else if (lat && lng) {
-            // For geo search, we'll search broadly and filter
-            const dept = '75'; // Default to Paris area, will be improved
-            queryParams.set('where', `type_service_local="${apiType}"`);
-        } else {
-            // Default search
-            queryParams.set('where', `type_service_local="${apiType}"`);
-        }
-
-        const url = `${baseUrl}?${queryParams.toString()}`;
-        console.log('[Services API] Fetching:', url);
-
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json',
-            },
+        const response = await fetch(baseUrl, {
+            headers: { 'Accept': 'application/json' },
         });
 
         console.log('[Services API] Response status:', response.status);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[Services API] Error response:', errorText);
-            throw new Error(`API error: ${response.status}`);
-        }
+        if (response.ok) {
+            const data = await response.json();
+            console.log('[Services API] Got data:', data.features?.length || 0, 'results');
 
-        const data = await response.json();
-        console.log('[Services API] Results count:', data.total_count || data.results?.length || 0);
+            if (data.features && Array.isArray(data.features)) {
+                services = data.features.map((feature: any) => {
+                    const props = feature.properties || {};
+                    const adresse = props.adresses?.[0] || {};
 
-        // Parse results - adapt to actual API response structure
-        if (data.results && Array.isArray(data.results)) {
-            services = data.results.map((item: any) => {
-                // The API returns nested structure
-                const fields = item;
-                return {
-                    id: fields.id || fields.identifiant || String(Math.random()),
-                    name: fields.nom || fields.name || 'Service public',
-                    type: fields.type_service_local || fields.pivot_local || type,
-                    address: fields.adresse || fields.adresse_courriel || '',
-                    postalCode: fields.code_postal || '',
-                    city: fields.nom_commune || fields.commune || '',
-                    phone: fields.telephone || fields.tel || null,
-                    email: fields.adresse_courriel || fields.email || null,
-                    url: fields.site_internet || fields.url || null,
-                    latitude: fields.latitude ? parseFloat(fields.latitude) : null,
-                    longitude: fields.longitude ? parseFloat(fields.longitude) : null,
-                };
-            });
-        }
-
-        // Filter by type if we have results
-        if (apiType && services.length > 0) {
-            const filtered = services.filter(s =>
-                s.type?.toLowerCase().includes(apiType.toLowerCase()) ||
-                s.name?.toLowerCase().includes(apiType.toLowerCase())
-            );
-            if (filtered.length > 0) {
-                services = filtered;
+                    return {
+                        id: props.id || String(Math.random()),
+                        name: props.nom || 'Service public',
+                        type: props.pivot?.[0]?.type_service_local || type,
+                        address: adresse.lignes?.join(', ') || '',
+                        postalCode: adresse.codePostal || postalCode || '',
+                        city: adresse.commune || cityName || '',
+                        phone: props.telephone || null,
+                        email: props.email || null,
+                        url: props.url || null,
+                    };
+                });
             }
-        }
-
-        // Calculate distance if we have coordinates
-        if (lat && lng && services.length > 0) {
-            const userLat = parseFloat(lat);
-            const userLng = parseFloat(lng);
-
-            services = services.map(service => {
-                if (service.latitude && service.longitude) {
-                    service.distance = calculateDistance(
-                        userLat, userLng,
-                        service.latitude, service.longitude
-                    );
-                }
-                return service;
-            }).sort((a, b) => (a.distance || 999) - (b.distance || 999));
+        } else {
+            console.log('[Services API] etablissements-publics failed, using fallback');
+            // Fallback: just show city info
+            services = [{
+                id: cityCode,
+                name: `Mairie de ${cityName || 'votre commune'}`,
+                type: 'mairie',
+                address: `Recherchez "${type} ${cityName}" sur Google Maps`,
+                postalCode: postalCode || '',
+                city: cityName || '',
+                phone: null,
+                email: null,
+                url: `https://www.google.com/maps/search/${encodeURIComponent(type + ' ' + cityName)}`,
+            }];
         }
 
         console.log('[Services API] Returning', services.length, 'services');
@@ -141,35 +125,14 @@ export async function GET(request: NextRequest) {
             services,
             total: services.length,
             searchType: type,
-            debug: {
-                url,
-                resultCount: data.results?.length,
-                firstResult: data.results?.[0]
-            },
         });
 
     } catch (error: any) {
-        console.error('Error fetching services:', error);
-        return NextResponse.json(
-            { error: 'Failed to fetch services', details: error.message, services: [] },
-            { status: 500 }
-        );
+        console.error('[Services API] Error:', error);
+        return NextResponse.json({
+            error: 'Failed to fetch services',
+            details: error.message,
+            services: [],
+        });
     }
-}
-
-// Haversine formula to calculate distance between two points
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; // Radius of Earth in km
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 10) / 10; // Distance in km, rounded to 1 decimal
-}
-
-function toRad(deg: number): number {
-    return deg * (Math.PI / 180);
 }
