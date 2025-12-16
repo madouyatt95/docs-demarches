@@ -127,6 +127,22 @@ export default function DemarcheDetailPage() {
         }
     };
 
+    const handleChangeStatus = async (newStatus: string) => {
+        try {
+            const res = await fetch(`/api/demarches/${demarcheId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (res.ok) {
+                fetchDemarche();
+            }
+        } catch (err) {
+            console.error('Error changing status:', err);
+        }
+    };
+
     const progress = demarche
         ? (demarche.completedSteps / demarche.totalSteps) * 100
         : 0;
@@ -190,6 +206,22 @@ export default function DemarcheDetailPage() {
                                         style={{ width: `${progress}%` }}
                                     ></div>
                                 </div>
+                            </div>
+
+                            {/* Status change buttons */}
+                            <div className="dark-section-header">
+                                <h2 className="dark-section-title">📌 Statut</h2>
+                            </div>
+                            <div className="demarche-status-buttons">
+                                {Object.entries(statusConfig).map(([key, config]) => (
+                                    <button
+                                        key={key}
+                                        className={`demarche-status-btn ${demarche.status === key ? 'active' : ''}`}
+                                        onClick={() => handleChangeStatus(key)}
+                                    >
+                                        {config.label}
+                                    </button>
+                                ))}
                             </div>
 
                             {/* Checklist */}

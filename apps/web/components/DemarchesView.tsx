@@ -243,15 +243,20 @@ export function DemarchesView() {
         <div className="dark-container">
             {/* Missing pieces alert */}
             {totalMissingPieces > 0 && (
-                <div className="ios-alert-card danger">
-                    <div className="ios-alert-content">
-                        <span className="ios-alert-icon">⚠️</span>
-                        <div className="ios-alert-text">
-                            <p className="ios-alert-title">{totalMissingPieces} pièce(s) manquante(s)</p>
-                            <p className="ios-alert-subtitle">Complétez vos démarches</p>
+                <div className="dark-alert-card">
+                    <div className="dark-alert-content">
+                        <span className="dark-alert-icon">⚠️</span>
+                        <div className="dark-alert-text">
+                            <p className="dark-alert-title">{totalMissingPieces} pièce(s) manquante(s)</p>
+                            <p className="dark-alert-subtitle">Complétez vos démarches</p>
                         </div>
                     </div>
-                    <button className="ios-alert-action">Voir</button>
+                    <button
+                        className="dark-alert-action"
+                        onClick={() => setStatusFilter('draft')}
+                    >
+                        Voir
+                    </button>
                 </div>
             )}
 
