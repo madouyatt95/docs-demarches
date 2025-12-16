@@ -1,0 +1,23 @@
+{
+    "name": "docsbox",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "mobile": "npm run dev --workspace=apps/mobile",
+        "web": "npm run dev --workspace=apps/web",
+        "build": "npm run build --workspaces",
+        "lint": "npm run lint --workspaces",
+        "test": "npm run test --workspaces",
+        "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "prettier": "^3.2.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

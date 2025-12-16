@@ -1,0 +1,315 @@
+// ============================================
+// DOCSBOX - Prisma Database Schema
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTH
+// ============================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+  avatarUrl    String?
+  pin          String?  // Hash du PIN (4-6 chiffres)
+  biometricEnabled Boolean @default(false)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+  
+  // Relations
+  documents    Document[]
+  categories   Category[]
+  packs        Pack[]
+  demarches    Demarche[]
+  reminders    Reminder[]
+  subscription Subscription?
+  sessions     Session[]
+  
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
+  deviceInfo   String?
+  createdAt    DateTime @default(now())
+  
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ============================================
+// DOCUMENTS
+// ============================================
+
+model Document {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title         String
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  
+  filePath      String    // Chemin local ou S3
+  fileSize      Int
+  mimeType      String
+  thumbnailPath String?
+  
+  ocrText       String?   // Texte extrait par OCR (Premium)
+  
+  expirationDate DateTime?
+  tags          String[]  @default([])
+  
+  syncStatus    SyncStatus @default(LOCAL_ONLY)
+  encryptionKey String?   // Clé AES pour sync cloud
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  reminders     Reminder[]
+  packDocuments PackDocument[]
+  demarcheSteps DemarcheStep[]
+  shareLinks    ShareLink[]
+  
+  @@index([userId])
+  @@index([categoryId])
+  @@index([expirationDate])
+  @@map("documents")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String?  // null = catégorie système
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name      String
+  icon      String?
+  color     String?
+  sortOrder Int      @default(0)
+  
+  documents Document[]
+  
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId  String?
+  document    Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  title       String
+  message     String?
+  remindAt    DateTime
+  repeatType  RepeatType?
+  
+  isSent      Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([remindAt])
+  @@map("reminders")
+}
+
+// ============================================
+// PACKS
+// ============================================
+
+model Pack {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name       String
+  templateId String?  // ID du template utilisé
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  documents  PackDocument[]
+  shareLinks ShareLink[]
+  
+  @@index([userId])
+  @@map("packs")
+}
+
+model PackDocument {
+  id         String   @id @default(cuid())
+  packId     String
+  pack       Pack     @relation(fields: [packId], references: [id], onDelete: Cascade)
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  sortOrder  Int      @default(0)
+  
+  @@unique([packId, documentId])
+  @@map("pack_documents")
+}
+
+// ============================================
+// DÉMARCHES (Premium)
+// ============================================
+
+model Demarche {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title      String
+  templateId String
+  status     DemarcheStatus @default(DRAFT)
+  
+  deadline   DateTime?
+  notes      String?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  completedAt DateTime?
+  
+  // Relations
+  steps      DemarcheStep[]
+  
+  @@index([userId])
+  @@index([status])
+  @@map("demarches")
+}
+
+model DemarcheStep {
+  id          String    @id @default(cuid())
+  demarcheId  String
+  demarche    Demarche  @relation(fields: [demarcheId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  sortOrder   Int
+  
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  
+  // Pièce requise
+  requiredDocumentType String?
+  documentId           String?
+  document             Document? @relation(fields: [documentId], references: [id])
+  
+  @@index([demarcheId])
+  @@map("demarche_steps")
+}
+
+// ============================================
+// PARTAGE
+// ============================================
+
+model ShareLink {
+  id         String    @id @default(cuid())
+  
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  packId     String?
+  pack       Pack?     @relation(fields: [packId], references: [id], onDelete: Cascade)
+  
+  token      String    @unique
+  expiresAt  DateTime?
+  password   String?   // Hash bcrypt
+  
+  maxDownloads Int?
+  downloadCount Int    @default(0)
+  
+  watermarkText String? // Filigrane personnalisé
+  
+  createdAt  DateTime  @default(now())
+  
+  @@index([token])
+  @@map("share_links")
+}
+
+// ============================================
+// ABONNEMENT
+// ============================================
+
+model Subscription {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  plan            SubscriptionPlan @default(FREE)
+  status          SubscriptionStatus @default(ACTIVE)
+  
+  // Infos Apple/Google/Stripe
+  provider        PaymentProvider?
+  externalId      String?  // ID Apple/Google/Stripe
+  
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("subscriptions")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum SyncStatus {
+  LOCAL_ONLY
+  SYNCING
+  SYNCED
+  ERROR
+}
+
+enum RepeatType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum DemarcheStatus {
+  DRAFT
+  IN_PROGRESS
+  SENT
+  WAITING
+  COMPLETED
+}
+
+enum SubscriptionPlan {
+  FREE
+  PREMIUM_MONTHLY
+  PREMIUM_YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum PaymentProvider {
+  APPLE
+  GOOGLE
+  STRIPE
+}
