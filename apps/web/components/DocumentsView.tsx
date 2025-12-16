@@ -58,9 +58,10 @@ function getCategoryInfo(categoryId: string | null) {
 
 interface DocumentsViewProps {
     onOpenModal?: () => void;
+    onScannerClick?: () => void;
 }
 
-export function DocumentsView({ onOpenModal }: DocumentsViewProps) {
+export function DocumentsView({ onOpenModal, onScannerClick }: DocumentsViewProps) {
     const [activeTab, setActiveTab] = useState<'recent' | 'categories'>('recent');
     const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -131,7 +132,7 @@ export function DocumentsView({ onOpenModal }: DocumentsViewProps) {
                 <h2 className="dark-section-title">Actions rapides</h2>
             </div>
             <div className="dark-quick-actions">
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }} onClick={onOpenModal}>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }} onClick={onScannerClick}>
                     <span className="dark-action-icon">📷</span>
                     <span className="dark-action-label">Scanner</span>
                 </button>
