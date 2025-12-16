@@ -71,19 +71,25 @@ export async function PATCH(
     try {
         // Add documents to pack
         if (body.addDocumentIds && Array.isArray(body.addDocumentIds)) {
-            const insertData = body.addDocumentIds.map((docId: string) => ({
-                packId: id,
-                documentId: docId,
-            }));
+            console.log('[Pack API] Adding documents:', body.addDocumentIds, 'to pack:', id);
 
-            const { error } = await getSupabase()
-                .from('pack_documents')
-                .upsert(insertData, { onConflict: 'packId,documentId' });
+            for (const docId of body.addDocumentIds) {
+                // Use insert with on conflict ignore
+                const { error } = await getSupabase()
+                    .from('pack_documents')
+                    .insert({
+                        packId: id,
+                        documentId: docId,
+                    });
 
-            if (error) {
-                console.error('Error adding documents:', error);
-                throw error;
+                if (error) {
+                    // Ignore duplicate key errors
+                    if (error.code !== '23505') {
+                        console.error('Error adding document:', docId, error);
+                    }
+                }
             }
+            console.log('[Pack API] Documents added successfully');
         }
 
         // Remove document from pack
