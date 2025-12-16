@@ -279,35 +279,34 @@ export async function POST(request: NextRequest) {
                         console.log(`[Auto-link] Total linked: ${linkedCount} steps`);
                     }
                 }
-            }
             } catch (linkError) {
-            console.warn('[Auto-link] Failed (non-critical):', linkError);
+                console.warn('[Auto-link] Failed (non-critical):', linkError);
+            }
         }
-    }
 
         // Recalculate completed steps
         const { data: updatedSteps } = await getSupabase()
-        .from('demarche_steps')
-        .select('isCompleted')
-        .eq('demarcheId', data.id);
+            .from('demarche_steps')
+            .select('isCompleted')
+            .eq('demarcheId', data.id);
 
-    const completedCount = updatedSteps?.filter((s: any) => s.isCompleted).length || 0;
+        const completedCount = updatedSteps?.filter((s: any) => s.isCompleted).length || 0;
 
-    return NextResponse.json({
-        ...data,
-        status: data.status?.toLowerCase() || 'draft',
-        steps: [],
-        completedSteps: completedCount,
-        totalSteps: stepsToInsert.length,
-        missingPieces: 0,
-    }, { status: 201 });
-} catch (error: any) {
-    console.error('Error creating demarche:', error);
-    return NextResponse.json(
-        { error: 'Failed to create demarche', details: error.message },
-        { status: 500 }
-    );
-}
+        return NextResponse.json({
+            ...data,
+            status: data.status?.toLowerCase() || 'draft',
+            steps: [],
+            completedSteps: completedCount,
+            totalSteps: stepsToInsert.length,
+            missingPieces: 0,
+        }, { status: 201 });
+    } catch (error: any) {
+        console.error('Error creating demarche:', error);
+        return NextResponse.json(
+            { error: 'Failed to create demarche', details: error.message },
+            { status: 500 }
+        );
+    }
 }
 
 // DELETE /api/demarches?id=xxx
