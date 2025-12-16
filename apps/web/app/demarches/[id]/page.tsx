@@ -56,14 +56,23 @@ const templateIcons: Record<string, string> = {
     impots: '📊',
 };
 
+interface Document {
+    id: string;
+    title: string;
+    filePath: string;
+    mimeType: string;
+}
+
 export default function DemarcheDetailPage() {
     const params = useParams();
     const router = useRouter();
     const demarcheId = params.id as string;
 
     const [demarche, setDemarche] = useState<Demarche | null>(null);
+    const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectingStepId, setSelectingStepId] = useState<string | null>(null);
 
     const fetchDemarche = useCallback(async () => {
         if (!demarcheId) return;
@@ -91,6 +100,64 @@ export default function DemarcheDetailPage() {
     useEffect(() => {
         fetchDemarche();
     }, [fetchDemarche]);
+
+    // Fetch available documents for linking
+    const fetchDocuments = useCallback(async () => {
+        try {
+            const res = await fetch('/api/documents');
+            if (res.ok) {
+                const data = await res.json();
+                setDocuments(data.data || []);
+            }
+        } catch (err) {
+            console.error('Error fetching documents:', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchDocuments();
+    }, [fetchDocuments]);
+
+    const handleLinkDocument = async (stepId: string, documentId: string) => {
+        try {
+            const res = await fetch(`/api/demarches/${demarcheId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stepId,
+                    documentId,
+                    isCompleted: true, // Auto-mark as completed when document linked
+                }),
+            });
+
+            if (res.ok) {
+                setSelectingStepId(null);
+                fetchDemarche();
+            }
+        } catch (err) {
+            console.error('Error linking document:', err);
+        }
+    };
+
+    const handleUnlinkDocument = async (stepId: string) => {
+        try {
+            const res = await fetch(`/api/demarches/${demarcheId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stepId,
+                    documentId: null,
+                    isCompleted: false,
+                }),
+            });
+
+            if (res.ok) {
+                fetchDemarche();
+            }
+        } catch (err) {
+            console.error('Error unlinking document:', err);
+        }
+    };
 
     const handleToggleStep = async (stepId: string, isCompleted: boolean) => {
         try {
@@ -291,17 +358,65 @@ export default function DemarcheDetailPage() {
                                             {step.description && (
                                                 <div className="demarche-step-desc">{step.description}</div>
                                             )}
-                                            {step.document && (
+                                            {step.document ? (
                                                 <div className="demarche-step-doc">
                                                     📄 {step.document.title}
+                                                    <button
+                                                        className="demarche-step-unlink"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleUnlinkDocument(step.id);
+                                                        }}
+                                                    >
+                                                        ✕
+                                                    </button>
                                                 </div>
-                                            )}
-                                            {step.requiredDocumentType && !step.document && !step.isCompleted && (
+                                            ) : step.requiredDocumentType && !step.isCompleted ? (
                                                 <div className="demarche-step-missing">
                                                     ⚠️ Document requis
                                                 </div>
-                                            )}
+                                            ) : null}
+
                                             <div className="demarche-step-actions">
+                                                {/* Link document button/selector */}
+                                                {!step.document && (
+                                                    selectingStepId === step.id ? (
+                                                        <div className="demarche-doc-selector">
+                                                            <select
+                                                                className="form-input"
+                                                                onChange={(e) => {
+                                                                    if (e.target.value) {
+                                                                        handleLinkDocument(step.id, e.target.value);
+                                                                    }
+                                                                }}
+                                                                autoFocus
+                                                            >
+                                                                <option value="">Choisir un document...</option>
+                                                                {documents.map(doc => (
+                                                                    <option key={doc.id} value={doc.id}>
+                                                                        {doc.title}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <button
+                                                                className="demarche-step-remove"
+                                                                onClick={() => setSelectingStepId(null)}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            className="demarche-step-link"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectingStepId(step.id);
+                                                            }}
+                                                        >
+                                                            📎 Lier document
+                                                        </button>
+                                                    )
+                                                )}
                                                 <button
                                                     className="demarche-step-remove"
                                                     onClick={(e) => {
