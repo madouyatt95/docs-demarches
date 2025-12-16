@@ -82,6 +82,66 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
+        // Predefined steps for each template
+        const templateSteps: Record<string, Array<{ title: string; description?: string; requiredDocumentType?: string }>> = {
+            carte_grise: [
+                { title: 'Ancienne carte grise barrée', description: 'Barrer la carte grise et mentionner "vendu le [date]"', requiredDocumentType: 'carte_grise' },
+                { title: 'Pièce d\'identité', description: 'CNI ou passeport en cours de validité', requiredDocumentType: 'identite' },
+                { title: 'Justificatif de domicile', description: 'Moins de 6 mois', requiredDocumentType: 'domicile' },
+                { title: 'Cerfa 13750', description: 'Formulaire de demande de certificat d\'immatriculation', requiredDocumentType: 'cerfa' },
+                { title: 'Contrôle technique', description: 'Moins de 6 mois si véhicule > 4 ans', requiredDocumentType: 'controle_technique' },
+                { title: 'Mandat d\'immatriculation', description: 'Si démarche effectuée par un tiers' },
+            ],
+            passeport: [
+                { title: 'Pièce d\'identité actuelle', description: 'Ancien passeport ou CNI', requiredDocumentType: 'identite' },
+                { title: 'Photo d\'identité', description: 'Aux normes, moins de 6 mois', requiredDocumentType: 'photo' },
+                { title: 'Justificatif de domicile', description: 'Moins d\'un an', requiredDocumentType: 'domicile' },
+                { title: 'Timbre fiscal', description: '86€ pour un adulte', requiredDocumentType: 'timbre' },
+                { title: 'Prendre RDV en mairie', description: 'Réserver un créneau sur le site de la mairie' },
+                { title: 'Se rendre au RDV', description: 'Apporter tous les documents' },
+            ],
+            permis: [
+                { title: 'Pièce d\'identité', requiredDocumentType: 'identite' },
+                { title: 'Photo d\'identité numérique', requiredDocumentType: 'photo' },
+                { title: 'Justificatif de domicile', requiredDocumentType: 'domicile' },
+                { title: 'ASSR ou ASR', description: 'Attestation scolaire de sécurité routière' },
+                { title: 'Cerfa 02', description: 'Formulaire d\'inscription au permis' },
+            ],
+            demenagement: [
+                { title: 'Résilier/transférer électricité', description: 'EDF, Engie ou autre fournisseur' },
+                { title: 'Résilier/transférer internet', description: 'Contacter votre opérateur' },
+                { title: 'Redirection courrier', description: 'La Poste - service de suivi du courrier' },
+                { title: 'Changement adresse CAF', description: 'Mettre à jour sur caf.fr' },
+                { title: 'Changement adresse impôts', description: 'Mettre à jour sur impots.gouv.fr' },
+                { title: 'Changement carte grise', description: 'Obligatoire sous 1 mois' },
+                { title: 'Inscription listes électorales', description: 'Mairie du nouveau domicile' },
+            ],
+            caf: [
+                { title: 'Pièce d\'identité', requiredDocumentType: 'identite' },
+                { title: 'RIB', description: 'Pour le versement des aides', requiredDocumentType: 'rib' },
+                { title: 'Avis d\'imposition', description: 'De l\'année précédente', requiredDocumentType: 'impots' },
+                { title: 'Justificatif de domicile', requiredDocumentType: 'domicile' },
+                { title: 'Bail ou quittance de loyer', requiredDocumentType: 'bail' },
+                { title: 'Attestation de loyer', description: 'Cerfa 10842 à faire remplir par le propriétaire' },
+            ],
+            assurance: [
+                { title: 'Pièce d\'identité', requiredDocumentType: 'identite' },
+                { title: 'RIB', requiredDocumentType: 'rib' },
+                { title: 'Bail ou acte de propriété', requiredDocumentType: 'bail' },
+                { title: 'Diagnostic immobilier', description: 'État des risques' },
+                { title: 'Comparatif des offres', description: 'Utiliser un comparateur en ligne' },
+                { title: 'Souscrire le contrat', description: 'Signature électronique ou papier' },
+            ],
+            impots: [
+                { title: 'Bulletins de salaire', description: 'De l\'année concernée', requiredDocumentType: 'salaire' },
+                { title: 'Relevés bancaires', description: 'Intérêts et dividendes perçus' },
+                { title: 'Attestation employeur', description: 'Si télétravail' },
+                { title: 'Frais réels', description: 'Justificatifs si option frais réels' },
+                { title: 'Déclaration en ligne', description: 'Sur impots.gouv.fr' },
+                { title: 'Vérifier l\'avis d\'imposition', description: 'Après traitement' },
+            ],
+        };
+
         const demarche = {
             id: `dem_${Date.now()}`,
             userId: 'demo_user', // TODO: get from auth session
@@ -105,9 +165,11 @@ export async function POST(request: NextRequest) {
             throw error;
         }
 
-        // Insert steps if provided
-        if (body.steps && body.steps.length > 0) {
-            const steps = body.steps.map((step: any, index: number) => ({
+        // Get steps from body or use template defaults
+        const stepsToInsert = body.steps || templateSteps[body.templateId] || [];
+
+        if (stepsToInsert.length > 0) {
+            const steps = stepsToInsert.map((step: any, index: number) => ({
                 id: `step_${Date.now()}_${index}`,
                 demarcheId: data.id,
                 title: step.title,
@@ -125,7 +187,7 @@ export async function POST(request: NextRequest) {
             status: data.status?.toLowerCase() || 'draft',
             steps: [],
             completedSteps: 0,
-            totalSteps: body.steps?.length || 0,
+            totalSteps: stepsToInsert.length,
             missingPieces: 0,
         }, { status: 201 });
     } catch (error: any) {
