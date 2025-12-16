@@ -1738,8 +1738,8 @@ body {
 /* iOS FAB (Floating Action Button) */
 .ios-fab {
     position: fixed;
-    bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 1rem);
-    right: 1rem;
+    bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 1.5rem);
+    right: 1.25rem;
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -1753,7 +1753,7 @@ body {
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
-    z-index: 50;
+    z-index: 90;
 }
 
 .ios-fab:active {
