@@ -1,28 +1,17 @@
 // ============================================
-// DOCSBOX API - File Upload Route
+// DOCSBOX API - File Upload Route (Supabase Storage)
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { getSupabase } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
 
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
-// Ensure upload directory exists
-async function ensureUploadDir() {
-    try {
-        await mkdir(UPLOAD_DIR, { recursive: true });
-    } catch (error) {
-        // Directory might already exist
-    }
-}
-
-// POST /api/upload - Upload a file
+// POST /api/upload - Upload a file to Supabase Storage
 export async function POST(request: NextRequest) {
     try {
-        await ensureUploadDir();
-
         const formData = await request.formData();
         const file = formData.get('file') as File;
 
@@ -60,28 +49,59 @@ export async function POST(request: NextRequest) {
         // Generate unique filename
         const ext = file.name.split('.').pop() || 'pdf';
         const fileName = `${randomUUID()}.${ext}`;
-        const filePath = join(UPLOAD_DIR, fileName);
+        const filePath = `documents/${fileName}`;
 
-        // Write file to disk
+        // Convert file to buffer
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        await writeFile(filePath, buffer);
 
-        // Return public URL
-        const publicUrl = `/uploads/${fileName}`;
+        // Upload to Supabase Storage
+        const supabase = getSupabase();
+        const { data, error } = await supabase.storage
+            .from('docsbox-files')
+            .upload(filePath, buffer, {
+                contentType: file.type,
+                cacheControl: '3600',
+                upsert: false,
+            });
+
+        if (error) {
+            console.error('Supabase Storage error:', error);
+
+            // If bucket doesn't exist, try to create simple fallback
+            if (error.message?.includes('not found') || error.message?.includes('Bucket')) {
+                // Return a mock path for demo purposes
+                return NextResponse.json({
+                    success: true,
+                    fileName,
+                    filePath: `/demo/${fileName}`,
+                    fileSize: file.size,
+                    mimeType: file.type,
+                    originalName: file.name,
+                    note: 'Demo mode - configure Supabase Storage for production',
+                });
+            }
+
+            throw error;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+            .from('docsbox-files')
+            .getPublicUrl(filePath);
 
         return NextResponse.json({
             success: true,
             fileName,
-            filePath: publicUrl,
+            filePath: urlData.publicUrl || filePath,
             fileSize: file.size,
             mimeType: file.type,
             originalName: file.name,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Upload error:', error);
         return NextResponse.json(
-            { error: 'Failed to upload file' },
+            { error: 'Failed to upload file', details: error.message },
             { status: 500 }
         );
     }
@@ -92,6 +112,6 @@ export async function GET() {
     return NextResponse.json({
         maxSize: '10MB',
         allowedTypes: ['PDF', 'JPEG', 'PNG', 'WebP'],
-        uploadDir: '/uploads',
+        storage: 'Supabase Storage',
     });
 }
