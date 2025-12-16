@@ -56,7 +56,11 @@ function getCategoryInfo(categoryId: string | null) {
     return categoryConfig['default'];
 }
 
-export function DocumentsView() {
+interface DocumentsViewProps {
+    onOpenModal?: () => void;
+}
+
+export function DocumentsView({ onOpenModal }: DocumentsViewProps) {
     const [activeTab, setActiveTab] = useState<'recent' | 'categories'>('recent');
     const [documents, setDocuments] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -127,15 +131,15 @@ export function DocumentsView() {
                 <h2 className="dark-section-title">Actions rapides</h2>
             </div>
             <div className="dark-quick-actions">
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }}>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }} onClick={onOpenModal}>
                     <span className="dark-action-icon">📷</span>
                     <span className="dark-action-label">Scanner</span>
                 </button>
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-green)' }}>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-green)' }} onClick={onOpenModal}>
                     <span className="dark-action-icon">📁</span>
                     <span className="dark-action-label">Importer</span>
                 </button>
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-purple)' }}>
+                <button className="dark-action-btn" style={{ background: 'var(--gradient-purple)' }} onClick={() => window.location.href = '/packs'}>
                     <span className="dark-action-icon">📦</span>
                     <span className="dark-action-label">Pack</span>
                 </button>

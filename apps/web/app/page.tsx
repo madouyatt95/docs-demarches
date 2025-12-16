@@ -13,20 +13,19 @@ import { MobileNav } from '@/components/MobileNav';
 export default function HomePage() {
     const [showAddModal, setShowAddModal] = useState(false);
 
+    const openAddModal = () => setShowAddModal(true);
+
     return (
         <div className="app-container">
             <Sidebar />
             <main className="flex-1 flex flex-col">
-                {/* iOS-style header integrated into content */}
-                <div className="main-content">
-                    <DocumentsView />
-                </div>
+                <DocumentsView onOpenModal={openAddModal} />
             </main>
 
             {/* Floating Action Button */}
             <button
                 className="ios-fab"
-                onClick={() => setShowAddModal(true)}
+                onClick={openAddModal}
                 aria-label="Ajouter un document"
             >
                 +
@@ -45,3 +44,4 @@ export default function HomePage() {
         </div>
     );
 }
+

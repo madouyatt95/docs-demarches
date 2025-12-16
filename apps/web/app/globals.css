@@ -2978,3 +2978,261 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* ============================================
+   PREMIUM PAGE - Dark Mode Styles
+   ============================================ */
+
+.premium-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom) + 2rem);
+    background: var(--color-background);
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+.premium-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.premium-icon-badge {
+    width: 70px;
+    height: 70px;
+    background: var(--gradient-purple);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1rem;
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+}
+
+.premium-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+}
+
+.premium-subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Features Grid */
+.premium-features {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 1.5rem;
+}
+
+.premium-feature-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+}
+
+.premium-feature-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.premium-feature-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.premium-feature-title {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.premium-feature-desc {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+/* Pricing Cards */
+.premium-pricing {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 320px;
+}
+
+.premium-plan-card {
+    flex: 1;
+    padding: 1rem;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.premium-plan-card.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.premium-plan-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--color-success);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+}
+
+.premium-plan-name {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.premium-plan-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.premium-plan-period {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+}
+
+/* CTA Button */
+.premium-cta-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    background: var(--gradient-blue);
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+    transition: transform 0.15s ease;
+}
+
+.premium-cta-btn:active {
+    transform: scale(0.98);
+}
+
+.premium-cta-btn.processing {
+    background: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+.premium-legal {
+    font-size: 0.7rem;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    max-width: 280px;
+}
+
+/* Comparison Table */
+.premium-comparison {
+    width: 100%;
+    max-width: 400px;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.premium-comparison-header {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface-elevated);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.premium-comparison-header>div {
+    text-align: center;
+}
+
+.premium-comparison-header>div:first-child {
+    text-align: left;
+}
+
+.premium-comparison-header .premium-col {
+    color: var(--color-primary);
+}
+
+.premium-comparison-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px;
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.premium-comparison-row:last-child {
+    border-bottom: none;
+}
+
+.premium-comparison-row>div {
+    text-align: center;
+}
+
+.premium-comparison-row>div:first-child {
+    text-align: left;
+}
+
+.premium-comparison-row .free-col {
+    color: var(--color-text-secondary);
+}
+
+.premium-comparison-row .premium-col {
+    color: var(--color-success);
+}
+
+/* Desktop styles */
+@media (min-width: 640px) {
+    .premium-container {
+        padding: 2rem;
+        justify-content: center;
+    }
+
+    .premium-features {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 600px;
+    }
+
+    .premium-pricing {
+        max-width: 400px;
+    }
+
+    .premium-plan-price {
+        font-size: 1.75rem;
+    }
+}
