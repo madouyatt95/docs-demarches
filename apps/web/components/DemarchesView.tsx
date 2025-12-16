@@ -42,6 +42,16 @@ const templates = [
     { id: 'banque', name: 'Ouvrir compte bancaire', icon: '💳' },
     { id: 'secu', name: 'Sécurité sociale', icon: '🏥' },
     { id: 'vehicule_occasion', name: 'Achat véhicule occasion', icon: '🚙' },
+    { id: 'rsa', name: 'RSA', icon: '💶' },
+    { id: 'hlm', name: 'Demande HLM', icon: '🏢' },
+    { id: 'allocations', name: 'Allocations familiales', icon: '👨‍👩‍👧' },
+    { id: 'conge_parental', name: 'Congé maternité/paternité', icon: '🤰' },
+    { id: 'cmu', name: 'CMU / CSS', icon: '💊' },
+    { id: 'bourse', name: 'Bourse étudiante', icon: '🎓' },
+    { id: 'apl', name: 'APL', icon: '🏠' },
+    { id: 'mdph', name: 'MDPH Handicap', icon: '♿' },
+    { id: 'france_travail', name: 'France Travail', icon: '📋' },
+    { id: 'titre_sejour', name: 'Titre de séjour', icon: '📄' },
 ];
 
 const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
