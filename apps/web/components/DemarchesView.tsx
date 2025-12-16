@@ -240,7 +240,7 @@ export function DemarchesView() {
         : demarches;
 
     return (
-        <div className="ios-container">
+        <div className="dark-container">
             {/* Missing pieces alert */}
             {totalMissingPieces > 0 && (
                 <div className="ios-alert-card danger">
