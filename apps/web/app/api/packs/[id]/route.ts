@@ -72,22 +72,31 @@ export async function PATCH(
         // Add documents to pack
         if (body.addDocumentIds && Array.isArray(body.addDocumentIds)) {
             console.log('[Pack API] Adding documents:', body.addDocumentIds, 'to pack:', id);
+            const insertErrors: any[] = [];
 
             for (const docId of body.addDocumentIds) {
-                // Use insert with on conflict ignore
-                const { error } = await getSupabase()
+                // Use insert with select to verify
+                const { data, error } = await getSupabase()
                     .from('pack_documents')
                     .insert({
                         packId: id,
                         documentId: docId,
-                    });
+                    })
+                    .select();
+
+                console.log('[Pack API] Insert result:', { docId, data, error });
 
                 if (error) {
-                    // Ignore duplicate key errors
-                    if (error.code !== '23505') {
-                        console.error('Error adding document:', docId, error);
-                    }
+                    insertErrors.push({ docId, error: error.message, code: error.code });
+                    console.error('[Pack API] Insert error:', error);
                 }
+            }
+
+            if (insertErrors.length > 0) {
+                return NextResponse.json({
+                    success: false,
+                    errors: insertErrors
+                }, { status: 400 });
             }
             console.log('[Pack API] Documents added successfully');
         }
