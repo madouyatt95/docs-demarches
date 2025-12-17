@@ -5052,3 +5052,109 @@ body {
         margin: auto;
     }
 }
+
+/* ============================================
+   PACK TEMPLATES - Dark Mode Styles
+   ============================================ */
+
+/* Template Grid */
+.ios-template-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .ios-template-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .ios-template-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Template Card */
+.ios-template-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ios-template-card:hover {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.ios-template-card:active {
+    transform: scale(0.97);
+}
+
+/* Template Icon */
+.ios-template-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 0.75rem;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    background: var(--gradient-blue);
+}
+
+/* Different colored icons for each template */
+.ios-template-card:nth-child(1) .ios-template-icon {
+    background: linear-gradient(135deg, #1E40AF, #3B82F6);
+}
+
+.ios-template-card:nth-child(2) .ios-template-icon {
+    background: linear-gradient(135deg, #047857, #10B981);
+}
+
+.ios-template-card:nth-child(3) .ios-template-icon {
+    background: linear-gradient(135deg, #B45309, #F59E0B);
+}
+
+.ios-template-card:nth-child(4) .ios-template-icon {
+    background: linear-gradient(135deg, #6D28D9, #8B5CF6);
+}
+
+.ios-template-card:nth-child(5) .ios-template-icon {
+    background: linear-gradient(135deg, #BE185D, #EC4899);
+}
+
+.ios-template-card:nth-child(6) .ios-template-icon {
+    background: linear-gradient(135deg, #0891B2, #06B6D4);
+}
+
+.ios-template-card:nth-child(7) .ios-template-icon {
+    background: linear-gradient(135deg, #374151, #6B7280);
+}
+
+/* Template Name */
+.ios-template-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Template Description */
+.ios-template-desc {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.3;
+}
