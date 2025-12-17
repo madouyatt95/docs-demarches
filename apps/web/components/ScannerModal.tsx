@@ -1,16 +1,30 @@
 // ============================================
-// DOCSBOX WEB - Scanner Modal with OCR (Premium Feature)
+// DOCSBOX WEB - Scanner Modal with OCR (Hybrid: Basic + Enhanced)
 // ============================================
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Tesseract from 'tesseract.js';
 
 interface ScannerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+}
+
+interface EnhancedScanResult {
+    detectedType: string;
+    documentName: string;
+    suggestedCategory: string | null;
+    extractedFields: Record<string, any>;
+    confidence: number;
+}
+
+interface ScanUsage {
+    used: number;
+    remaining: number;
+    limit: number;
 }
 
 export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) {
@@ -24,6 +38,12 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Enhanced detection state
+    const [enhancedResult, setEnhancedResult] = useState<EnhancedScanResult | null>(null);
+    const [scanUsage, setScanUsage] = useState<ScanUsage | null>(null);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const [isPremium] = useState(true); // TODO: Get from auth context
+
     const categories = [
         { id: 'cat_identity', name: 'Identité', emoji: '🪪' },
         { id: 'cat_housing', name: 'Logement', emoji: '🏠' },
@@ -34,6 +54,25 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         { id: 'cat_education', name: 'Éducation', emoji: '🎓' },
     ];
 
+    // Fetch scan usage on mount
+    useEffect(() => {
+        if (isOpen && isPremium) {
+            fetchScanUsage();
+        }
+    }, [isOpen, isPremium]);
+
+    const fetchScanUsage = async () => {
+        try {
+            const res = await fetch('/api/enhanced-scans');
+            if (res.ok) {
+                const data = await res.json();
+                setScanUsage(data);
+            }
+        } catch (err) {
+            console.error('Error fetching scan usage:', err);
+        }
+    };
+
     const resetState = () => {
         setStep('capture');
         setCapturedImage(null);
@@ -43,6 +82,8 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         setTitle('');
         setCategoryId('');
         setError(null);
+        setEnhancedResult(null);
+        setIsEnhancing(false);
     };
 
     const handleClose = () => {
@@ -54,7 +95,6 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Create preview
         const reader = new FileReader();
         reader.onload = (event) => {
             setCapturedImage(event.target?.result as string);
@@ -62,7 +102,6 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         reader.readAsDataURL(file);
         setCapturedFile(file);
 
-        // Start OCR processing
         setStep('processing');
         setError(null);
 
@@ -76,17 +115,69 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
             });
 
             setExtractedText(result.data.text);
-
-            // Try to generate a title from the first line
             const firstLine = result.data.text.split('\n')[0]?.trim() || '';
             const suggestedTitle = firstLine.slice(0, 50) || 'Document scanné';
             setTitle(suggestedTitle);
-
             setStep('review');
         } catch (err) {
             console.error('OCR Error:', err);
             setError('Erreur lors de l\'analyse du document. Veuillez réessayer.');
             setStep('capture');
+        }
+    };
+
+    const handleEnhanceDetection = async () => {
+        if (!capturedFile || !isPremium) return;
+
+        if (scanUsage && scanUsage.remaining <= 0) {
+            setError('Vous avez atteint la limite de 5 scans améliorés ce mois-ci.');
+            return;
+        }
+
+        setIsEnhancing(true);
+        setError(null);
+
+        try {
+            const usageRes = await fetch('/api/enhanced-scans', { method: 'POST' });
+            if (!usageRes.ok) {
+                const usageData = await usageRes.json();
+                setError(usageData.error || 'Limite de scans atteinte');
+                setIsEnhancing(false);
+                return;
+            }
+
+            const newUsage = await usageRes.json();
+            setScanUsage(newUsage);
+
+            const formData = new FormData();
+            formData.append('file', capturedFile);
+
+            const res = await fetch('/api/mindee', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Erreur lors de l\'analyse avancée');
+            }
+
+            const result = await res.json();
+            setEnhancedResult(result);
+
+            if (result.suggestedCategory) {
+                setCategoryId(result.suggestedCategory);
+            }
+
+            if (result.documentName && result.documentName !== 'Document') {
+                setTitle(result.documentName);
+            }
+
+        } catch (err: any) {
+            console.error('Enhanced detection error:', err);
+            setError(err.message || 'Erreur lors de l\'analyse avancée');
+        } finally {
+            setIsEnhancing(false);
         }
     };
 
@@ -97,7 +188,6 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
         setError(null);
 
         try {
-            // First upload the file
             const formData = new FormData();
             formData.append('file', capturedFile);
 
@@ -112,7 +202,6 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
 
             const uploadData = await uploadRes.json();
 
-            // Then create the document with OCR text
             const docRes = await fetch('/api/documents', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -122,7 +211,7 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                     filePath: uploadData.filePath || uploadData.path,
                     fileSize: capturedFile.size,
                     mimeType: capturedFile.type,
-                    ocrText: extractedText, // Save OCR text
+                    ocrText: extractedText,
                 }),
             });
 
@@ -144,24 +233,19 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
     return (
         <div className="modal-overlay" onClick={handleClose}>
             <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
                 <div className="modal-header">
                     <h2>Scanner avec OCR</h2>
                     <button className="modal-close-btn" onClick={handleClose}>×</button>
                 </div>
 
-                {/* Body */}
                 <div className="modal-body">
-                    {/* Step 1: Capture */}
                     {step === 'capture' && (
                         <div className="scanner-capture-zone">
                             <div className="scanner-icon">📷</div>
                             <h3>Photographiez votre document</h3>
                             <p>L'OCR va extraire le texte automatiquement</p>
 
-                            {error && (
-                                <div className="modal-error">{error}</div>
-                            )}
+                            {error && <div className="modal-error">{error}</div>}
 
                             <input
                                 ref={fileInputRef}
@@ -194,41 +278,72 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                         </div>
                     )}
 
-                    {/* Step 2: Processing */}
                     {step === 'processing' && (
                         <div className="scanner-processing">
                             {capturedImage && (
-                                <img
-                                    src={capturedImage}
-                                    alt="Document capturé"
-                                    className="scanner-preview-img"
-                                />
+                                <img src={capturedImage} alt="Document" className="scanner-preview-img" />
                             )}
                             <div className="scanner-progress">
                                 <div className="scanner-progress-bar">
-                                    <div
-                                        className="scanner-progress-fill"
-                                        style={{ width: `${progress}%` }}
-                                    ></div>
+                                    <div className="scanner-progress-fill" style={{ width: `${progress}%` }}></div>
                                 </div>
                                 <p>Analyse OCR en cours... {progress}%</p>
                             </div>
                         </div>
                     )}
 
-                    {/* Step 3: Review */}
                     {step === 'review' && (
                         <div className="scanner-review">
                             {capturedImage && (
-                                <img
-                                    src={capturedImage}
-                                    alt="Document capturé"
-                                    className="scanner-preview-img small"
-                                />
+                                <img src={capturedImage} alt="Document" className="scanner-preview-img small" />
                             )}
 
-                            {error && (
-                                <div className="modal-error">{error}</div>
+                            {error && <div className="modal-error">{error}</div>}
+
+                            {enhancedResult && (
+                                <div className="enhanced-result-card">
+                                    <div className="enhanced-result-header">
+                                        <span className="enhanced-badge">✨ Détection avancée</span>
+                                        <span className="enhanced-confidence">
+                                            {Math.round(enhancedResult.confidence * 100)}% confiance
+                                        </span>
+                                    </div>
+                                    <div className="enhanced-result-type">
+                                        <strong>Type détecté :</strong> {enhancedResult.documentName}
+                                    </div>
+                                    {Object.keys(enhancedResult.extractedFields).length > 0 && (
+                                        <div className="enhanced-result-fields">
+                                            <strong>Champs extraits :</strong>
+                                            <ul>
+                                                {Object.entries(enhancedResult.extractedFields).map(([key, value]) => (
+                                                    <li key={key}>
+                                                        <span className="field-key">{key}:</span>{' '}
+                                                        <span className="field-value">{String(value)}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {isPremium && !enhancedResult && (
+                                <div className="enhance-detection-section">
+                                    <button
+                                        className="enhance-btn"
+                                        onClick={handleEnhanceDetection}
+                                        disabled={isEnhancing || (scanUsage?.remaining === 0)}
+                                    >
+                                        {isEnhancing ? '⏳ Analyse en cours...' : '🚀 Améliorer la détection'}
+                                    </button>
+                                    {scanUsage && (
+                                        <p className="scan-usage-info">
+                                            {scanUsage.remaining > 0
+                                                ? `📊 ${scanUsage.remaining}/${scanUsage.limit} scans restants ce mois`
+                                                : '⚠️ Limite atteinte (renouvellement mensuel)'}
+                                        </p>
+                                    )}
+                                </div>
                             )}
 
                             <div className="form-group">
@@ -271,7 +386,6 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                         </div>
                     )}
 
-                    {/* Step 4: Saving */}
                     {step === 'saving' && (
                         <div className="scanner-processing">
                             <div className="dark-spinner"></div>
@@ -282,17 +396,12 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                     )}
                 </div>
 
-                {/* Footer */}
                 {step === 'review' && (
                     <div className="modal-footer">
                         <button className="scanner-retry-btn" onClick={resetState}>
                             ↩️ Reprendre
                         </button>
-                        <button
-                            className="submit-btn"
-                            onClick={handleSave}
-                            disabled={!title.trim()}
-                        >
+                        <button className="submit-btn" onClick={handleSave} disabled={!title.trim()}>
                             Enregistrer
                         </button>
                     </div>
