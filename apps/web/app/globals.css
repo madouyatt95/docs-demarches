@@ -2107,16 +2107,16 @@ body {
 
 /* Premium Pack Cards */
 .ios-pack-card {
-    background: white;
+    background: var(--color-surface);
     border-radius: var(--radius-xl);
     padding: 1rem;
     display: flex;
     align-items: center;
     gap: 1rem;
     margin-bottom: 0.75rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    transition: transform 0.15s ease;
+    transition: transform 0.15s ease, background 0.2s ease;
 }
 
 .ios-pack-card:active {
@@ -2135,31 +2135,31 @@ body {
 }
 
 .ios-pack-icon.location {
-    background: linear-gradient(135deg, #DBEAFE, #BFDBFE);
+    background: linear-gradient(135deg, #1E40AF, #3B82F6);
 }
 
 .ios-pack-icon.ecole {
-    background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+    background: linear-gradient(135deg, #047857, #10B981);
 }
 
 .ios-pack-icon.banque {
-    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    background: linear-gradient(135deg, #B45309, #F59E0B);
 }
 
 .ios-pack-icon.emploi {
-    background: linear-gradient(135deg, #E9D5FF, #DDD6FE);
+    background: linear-gradient(135deg, #6D28D9, #8B5CF6);
 }
 
 .ios-pack-icon.sante {
-    background: linear-gradient(135deg, #FCE7F3, #FBCFE8);
+    background: linear-gradient(135deg, #BE185D, #EC4899);
 }
 
 .ios-pack-icon.voyage {
-    background: linear-gradient(135deg, #CFFAFE, #A5F3FC);
+    background: linear-gradient(135deg, #0891B2, #06B6D4);
 }
 
 .ios-pack-icon.default {
-    background: linear-gradient(135deg, #F3F4F6, #E5E7EB);
+    background: linear-gradient(135deg, #374151, #6B7280);
 }
 
 .ios-pack-info {
@@ -2206,11 +2206,19 @@ body {
 }
 
 .ios-pack-action.edit {
-    background: #EFF6FF;
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.ios-pack-action.edit:hover {
+    background: rgba(59, 130, 246, 0.25);
 }
 
 .ios-pack-action.delete {
-    background: #FEE2E2;
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.ios-pack-action.delete:hover {
+    background: rgba(239, 68, 68, 0.25);
 }
 
 .ios-pack-chevron {
