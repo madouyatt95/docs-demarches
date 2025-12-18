@@ -7,7 +7,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DocumentSkeleton } from '@/components/Skeleton';
 import { SwipeableItem } from '@/components/SwipeableItem';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/lib/toast-context';
+
 
 interface Document {
     id: string;
@@ -216,196 +218,200 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
     }, {} as Record<string, Document[]>);
 
     return (
-        <div className="dark-container">
-            {/* Stats Card */}
-            <div className="dark-stats-card">
-                <div className="dark-stats-item">
-                    <span className="dark-stats-number">{documents.length}</span>
-                    <span className="dark-stats-label">Documents</span>
-                </div>
-                <div className="dark-stats-divider"></div>
-                <div className="dark-stats-item">
-                    <span className="dark-stats-number dark-stats-alert">{expiringDocs.length}</span>
-                    <span className="dark-stats-label">Alertes</span>
-                </div>
-            </div>
+        <PullToRefresh onRefresh={async () => { await fetchDocuments(); }}>
+            <div className="dark-container">
+                {/* Stats Card */}
+                <div className="dark-stats-card">
 
-            {/* Quick Actions 2x2 Grid */}
-            <div className="dark-section-header">
-                <h2 className="dark-section-title">Actions rapides</h2>
-            </div>
-            <div className="dark-quick-actions">
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }} onClick={onScannerClick}>
-                    <span className="dark-action-icon">📷</span>
-                    <span className="dark-action-label">Scanner</span>
-                </button>
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-green)' }} onClick={onOpenModal}>
-                    <span className="dark-action-icon">📁</span>
-                    <span className="dark-action-label">Importer</span>
-                </button>
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-purple)' }} onClick={() => window.location.href = '/packs'}>
-                    <span className="dark-action-icon">📦</span>
-                    <span className="dark-action-label">Pack</span>
-                </button>
-                <button className="dark-action-btn" style={{ background: 'var(--gradient-orange)' }} onClick={onShareClick}>
-                    <span className="dark-action-icon">📤</span>
-                    <span className="dark-action-label">Partager</span>
-                </button>
-            </div>
-
-            {/* Category Pills */}
-            <div className="dark-section-header">
-                <h2 className="dark-section-title">Catégories</h2>
-            </div>
-            <div className="dark-category-pills">
-                <button
-                    className={`dark-pill ${selectedCategory === null ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(null)}
-                >
-                    Tous
-                </button>
-                {Object.entries(categoryConfig).filter(([key]) => key !== 'default').map(([catId, catInfo]) => (
-                    <button
-                        key={catId}
-                        className={`dark-pill ${selectedCategory === catId ? 'active' : ''}`}
-                        onClick={() => setSelectedCategory(catId)}
-                    >
-                        <span>{catInfo.emoji}</span>
-                        <span>{catInfo.name}</span>
-                    </button>
-                ))}
-            </div>
-
-            {/* Loading State */}
-            {/* Loading State with Skeleton */}
-            {isLoading && (
-                <div className="dark-loading-skeleton">
-                    <DocumentSkeleton count={4} />
-                </div>
-            )}
-
-
-            {/* Error State */}
-            {error && !isLoading && (
-                <div className="dark-error">
-                    <span>⚠️</span>
-                    <span>{error}</span>
-                    <button onClick={fetchDocuments} className="dark-retry-btn">
-                        Réessayer
-                    </button>
-                </div>
-            )}
-
-            {/* Documents Section */}
-            {!isLoading && !error && (
-                <>
-                    <div className="dark-section-header">
-                        <h2 className="dark-section-title">Mes Documents</h2>
-                        <span className="dark-section-count">{documents.length}</span>
+                    <div className="dark-stats-item">
+                        <span className="dark-stats-number">{documents.length}</span>
+                        <span className="dark-stats-label">Documents</span>
                     </div>
+                    <div className="dark-stats-divider"></div>
+                    <div className="dark-stats-item">
+                        <span className="dark-stats-number dark-stats-alert">{expiringDocs.length}</span>
+                        <span className="dark-stats-label">Alertes</span>
+                    </div>
+                </div>
 
-                    {documents.length > 0 ? (
-                        <div className="dark-docs-grid">
-                            {documents
-                                .filter(doc => selectedCategory === null || doc.categoryId === selectedCategory)
-                                .slice(0, 6)
-                                .map((doc) => {
-                                    const catInfo = getCategoryInfo(doc.categoryId);
-                                    const expirationStatus = isDocumentExpiring(doc);
+                {/* Quick Actions 2x2 Grid */}
+                <div className="dark-section-header">
+                    <h2 className="dark-section-title">Actions rapides</h2>
+                </div>
+                <div className="dark-quick-actions">
+                    <button className="dark-action-btn" style={{ background: 'var(--gradient-blue)' }} onClick={onScannerClick}>
+                        <span className="dark-action-icon">📷</span>
+                        <span className="dark-action-label">Scanner</span>
+                    </button>
+                    <button className="dark-action-btn" style={{ background: 'var(--gradient-green)' }} onClick={onOpenModal}>
+                        <span className="dark-action-icon">📁</span>
+                        <span className="dark-action-label">Importer</span>
+                    </button>
+                    <button className="dark-action-btn" style={{ background: 'var(--gradient-purple)' }} onClick={() => window.location.href = '/packs'}>
+                        <span className="dark-action-icon">📦</span>
+                        <span className="dark-action-label">Pack</span>
+                    </button>
+                    <button className="dark-action-btn" style={{ background: 'var(--gradient-orange)' }} onClick={onShareClick}>
+                        <span className="dark-action-icon">📤</span>
+                        <span className="dark-action-label">Partager</span>
+                    </button>
+                </div>
 
-                                    return (
-                                        <div key={doc.id} className={`dark-doc-card ${expirationStatus.expiring ? 'expiring' : ''}`}>
-                                            <div
-                                                className="dark-doc-header"
-                                                style={{ background: `linear-gradient(135deg, ${catInfo.color}40 0%, ${catInfo.color}20 100%)` }}
-                                            >
-                                                <span className="dark-doc-emoji">{catInfo.emoji}</span>
-                                                {expirationStatus.expiring && (
-                                                    <span className={`dark-doc-badge ${expirationStatus.daysLeft <= 0 ? 'expired' : 'warning'}`}>
-                                                        ⚠️ {expirationStatus.reason}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="dark-doc-body">
-                                                {editingDocId === doc.id ? (
-                                                    <div className="dark-doc-edit-form">
-                                                        <input
-                                                            type="text"
-                                                            className="form-input"
-                                                            value={editTitle}
-                                                            onChange={(e) => setEditTitle(e.target.value)}
-                                                            placeholder="Titre du document"
-                                                        />
-                                                        <select
-                                                            className="form-input"
-                                                            value={editCategory}
-                                                            onChange={(e) => setEditCategory(e.target.value)}
-                                                        >
-                                                            <option value="">Catégorie...</option>
-                                                            <option value="cat_identity">🪪 Identité</option>
-                                                            <option value="cat_housing">🏠 Logement</option>
-                                                            <option value="cat_vehicle">🚗 Véhicule</option>
-                                                            <option value="cat_finance">💰 Finance</option>
-                                                            <option value="cat_health">🏥 Santé</option>
-                                                            <option value="cat_work">📜 Travail</option>
-                                                            <option value="cat_education">📚 Éducation</option>
-                                                            <option value="cat_family">👨‍👩‍👧 Famille</option>
-                                                        </select>
-                                                        <div className="dark-doc-edit-actions">
-                                                            <button className="dark-doc-action-btn save" onClick={saveEditDocument}>✓</button>
-                                                            <button className="dark-doc-action-btn cancel" onClick={cancelEditDocument}>✕</button>
+                {/* Category Pills */}
+                <div className="dark-section-header">
+                    <h2 className="dark-section-title">Catégories</h2>
+                </div>
+                <div className="dark-category-pills">
+                    <button
+                        className={`dark-pill ${selectedCategory === null ? 'active' : ''}`}
+                        onClick={() => setSelectedCategory(null)}
+                    >
+                        Tous
+                    </button>
+                    {Object.entries(categoryConfig).filter(([key]) => key !== 'default').map(([catId, catInfo]) => (
+                        <button
+                            key={catId}
+                            className={`dark-pill ${selectedCategory === catId ? 'active' : ''}`}
+                            onClick={() => setSelectedCategory(catId)}
+                        >
+                            <span>{catInfo.emoji}</span>
+                            <span>{catInfo.name}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Loading State */}
+                {/* Loading State with Skeleton */}
+                {isLoading && (
+                    <div className="dark-loading-skeleton">
+                        <DocumentSkeleton count={4} />
+                    </div>
+                )}
+
+
+                {/* Error State */}
+                {error && !isLoading && (
+                    <div className="dark-error">
+                        <span>⚠️</span>
+                        <span>{error}</span>
+                        <button onClick={fetchDocuments} className="dark-retry-btn">
+                            Réessayer
+                        </button>
+                    </div>
+                )}
+
+                {/* Documents Section */}
+                {!isLoading && !error && (
+                    <>
+                        <div className="dark-section-header">
+                            <h2 className="dark-section-title">Mes Documents</h2>
+                            <span className="dark-section-count">{documents.length}</span>
+                        </div>
+
+                        {documents.length > 0 ? (
+                            <div className="dark-docs-grid">
+                                {documents
+                                    .filter(doc => selectedCategory === null || doc.categoryId === selectedCategory)
+                                    .slice(0, 6)
+                                    .map((doc) => {
+                                        const catInfo = getCategoryInfo(doc.categoryId);
+                                        const expirationStatus = isDocumentExpiring(doc);
+
+                                        return (
+                                            <div key={doc.id} className={`dark-doc-card ${expirationStatus.expiring ? 'expiring' : ''}`}>
+                                                <div
+                                                    className="dark-doc-header"
+                                                    style={{ background: `linear-gradient(135deg, ${catInfo.color}40 0%, ${catInfo.color}20 100%)` }}
+                                                >
+                                                    <span className="dark-doc-emoji">{catInfo.emoji}</span>
+                                                    {expirationStatus.expiring && (
+                                                        <span className={`dark-doc-badge ${expirationStatus.daysLeft <= 0 ? 'expired' : 'warning'}`}>
+                                                            ⚠️ {expirationStatus.reason}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="dark-doc-body">
+                                                    {editingDocId === doc.id ? (
+                                                        <div className="dark-doc-edit-form">
+                                                            <input
+                                                                type="text"
+                                                                className="form-input"
+                                                                value={editTitle}
+                                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                                placeholder="Titre du document"
+                                                            />
+                                                            <select
+                                                                className="form-input"
+                                                                value={editCategory}
+                                                                onChange={(e) => setEditCategory(e.target.value)}
+                                                            >
+                                                                <option value="">Catégorie...</option>
+                                                                <option value="cat_identity">🪪 Identité</option>
+                                                                <option value="cat_housing">🏠 Logement</option>
+                                                                <option value="cat_vehicle">🚗 Véhicule</option>
+                                                                <option value="cat_finance">💰 Finance</option>
+                                                                <option value="cat_health">🏥 Santé</option>
+                                                                <option value="cat_work">📜 Travail</option>
+                                                                <option value="cat_education">📚 Éducation</option>
+                                                                <option value="cat_family">👨‍👩‍👧 Famille</option>
+                                                            </select>
+                                                            <div className="dark-doc-edit-actions">
+                                                                <button className="dark-doc-action-btn save" onClick={saveEditDocument}>✓</button>
+                                                                <button className="dark-doc-action-btn cancel" onClick={cancelEditDocument}>✕</button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <p className="dark-doc-title">{doc.title}</p>
-                                                        <p className="dark-doc-category">{catInfo.name}</p>
-                                                        <div className="dark-doc-actions">
-                                                            {doc.filePath && doc.filePath !== '/demo/' && (
-                                                                <a
-                                                                    href={doc.filePath}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="dark-doc-action-btn view"
+                                                    ) : (
+                                                        <>
+                                                            <p className="dark-doc-title">{doc.title}</p>
+                                                            <p className="dark-doc-category">{catInfo.name}</p>
+                                                            <div className="dark-doc-actions">
+                                                                {doc.filePath && doc.filePath !== '/demo/' && (
+                                                                    <a
+                                                                        href={doc.filePath}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="dark-doc-action-btn view"
+                                                                    >
+                                                                        👁️
+                                                                    </a>
+                                                                )}
+                                                                <button
+                                                                    className="dark-doc-action-btn edit"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        startEditDocument(doc);
+                                                                    }}
                                                                 >
-                                                                    👁️
-                                                                </a>
-                                                            )}
-                                                            <button
-                                                                className="dark-doc-action-btn edit"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    startEditDocument(doc);
-                                                                }}
-                                                            >
-                                                                ✏️
-                                                            </button>
-                                                            <button
-                                                                className="dark-doc-action-btn delete"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDeleteDocument(doc.id);
-                                                                }}
-                                                            >
-                                                                🗑️
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                )}
+                                                                    ✏️
+                                                                </button>
+                                                                <button
+                                                                    className="dark-doc-action-btn delete"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteDocument(doc.id);
+                                                                    }}
+                                                                >
+                                                                    🗑️
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                        </div>
-                    ) : (
-                        <div className="dark-empty">
-                            <div className="dark-empty-icon">📂</div>
-                            <h3>Aucun document</h3>
-                            <p>Commencez par ajouter votre premier document</p>
-                        </div>
-                    )}
-                </>
-            )}
-        </div>
+                                        );
+                                    })}
+                            </div>
+                        ) : (
+                            <div className="dark-empty">
+                                <div className="dark-empty-icon">📂</div>
+                                <h3>Aucun document</h3>
+                                <p>Commencez par ajouter votre premier document</p>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </PullToRefresh>
     );
 }
+
