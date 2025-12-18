@@ -5913,3 +5913,102 @@ body {
     text-align: center;
     line-height: 1.3;
 }
+
+/* ============================================
+   FLOATING DOCK NAVIGATION (iOS Style)
+   ============================================ */
+
+.floating-dock {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 0.75rem;
+    padding-bottom: calc(0.75rem + var(--safe-area-bottom));
+    z-index: 100;
+    pointer-events: none;
+}
+
+.floating-dock-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(44, 44, 46, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    pointer-events: auto;
+}
+
+.floating-dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 1.25rem;
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    transition: all 0.2s ease;
+    position: relative;
+    min-width: 56px;
+}
+
+.floating-dock-item:hover {
+    color: var(--color-text);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.floating-dock-item.active {
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.floating-dock-icon {
+    font-size: 1.5rem;
+    transition: transform 0.2s ease;
+}
+
+.floating-dock-item:hover .floating-dock-icon {
+    transform: scale(1.1);
+}
+
+.floating-dock-item.active .floating-dock-icon {
+    transform: scale(1.15);
+}
+
+.floating-dock-label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.floating-dock-indicator {
+    position: absolute;
+    bottom: 0.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--color-primary);
+    border-radius: 50%;
+}
+
+/* Hide old mobile nav on desktop */
+@media (min-width: 768px) {
+    .floating-dock {
+        display: none;
+    }
+}
+
+/* Adjust main content padding for floating dock */
+.main-content {
+    padding-bottom: calc(100px + var(--safe-area-bottom));
+}

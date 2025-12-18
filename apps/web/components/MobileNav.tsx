@@ -1,5 +1,5 @@
 // ============================================
-// DOCSBOX WEB - Mobile Bottom Navigation
+// DOCSBOX WEB - Mobile Bottom Navigation (Floating Dock)
 // ============================================
 
 'use client';
@@ -18,19 +18,24 @@ export function MobileNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="mobile-nav">
-            <div className="mobile-nav-items">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`mobile-nav-item ${pathname === item.href ? 'active' : ''}`}
-                    >
-                        <span>{item.icon}</span>
-                        <span>{item.label}</span>
-                    </Link>
-                ))}
+        <nav className="floating-dock">
+            <div className="floating-dock-inner">
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`floating-dock-item ${isActive ? 'active' : ''}`}
+                        >
+                            <span className="floating-dock-icon">{item.icon}</span>
+                            <span className="floating-dock-label">{item.label}</span>
+                            {isActive && <span className="floating-dock-indicator" />}
+                        </Link>
+                    );
+                })}
             </div>
         </nav>
     );
 }
+
