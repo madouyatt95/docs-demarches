@@ -42,7 +42,7 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
     const [enhancedResult, setEnhancedResult] = useState<EnhancedScanResult | null>(null);
     const [scanUsage, setScanUsage] = useState<ScanUsage | null>(null);
     const [isEnhancing, setIsEnhancing] = useState(false);
-    const [isPremium] = useState(true); // TODO: Get from auth context
+    const [isPremium] = useState(false); // TODO: Set to true when Mindee feature is ready
 
     const categories = [
         { id: 'cat_identity', name: 'Identité', emoji: '🪪' },
