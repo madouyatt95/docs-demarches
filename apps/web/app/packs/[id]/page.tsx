@@ -49,6 +49,8 @@ export default function PackDetailPage() {
     const [showShareModal, setShowShareModal] = useState(false);
     const [shareUrl, setShareUrl] = useState('');
     const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+    const [expirationDays, setExpirationDays] = useState(7);
+
 
     const fetchPack = useCallback(async () => {
         setIsLoading(true);
@@ -229,7 +231,7 @@ export default function PackDetailPage() {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     packId: pack.id,
-                                    expirationDays: 7,
+                                    expirationDays: expirationDays,
                                 }),
                             });
                             const data = await res.json();
@@ -345,42 +347,94 @@ export default function PackDetailPage() {
                 <div className="ios-modal-backdrop" onClick={() => setShowShareModal(false)}>
                     <div className="ios-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="ios-modal-handle"></div>
-                        <h2 className="ios-modal-title">🔗 Lien de partage</h2>
+                        <h2 className="ios-modal-title">🔗 Partager le pack</h2>
 
-                        <p style={{ color: '#9CA3AF', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                            Ce lien expire dans 7 jours
-                        </p>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                Durée de validité
+                            </label>
+                            <select
+                                value={expirationDays}
+                                onChange={(e) => setExpirationDays(Number(e.target.value))}
+                                className="ios-modal-input"
+                                style={{ marginBottom: '0.5rem' }}
+                            >
+                                <option value={1}>1 jour</option>
+                                <option value={3}>3 jours</option>
+                                <option value={7}>7 jours</option>
+                                <option value={14}>14 jours</option>
+                                <option value={30}>30 jours</option>
+                            </select>
+                        </div>
 
-                        <input
-                            type="text"
-                            value={shareUrl}
-                            readOnly
-                            className="ios-modal-input"
-                            style={{ marginBottom: '1rem', fontSize: '0.8rem' }}
-                            onClick={(e) => (e.target as HTMLInputElement).select()}
-                        />
+                        {shareUrl ? (
+                            <>
+                                <p style={{ color: '#10B981', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                    ✅ Lien créé ! Expire dans {expirationDays} jour(s)
+                                </p>
 
-                        <button
-                            onClick={async () => {
-                                try {
-                                    await navigator.clipboard.writeText(shareUrl);
-                                    alert('✅ Lien copié !');
-                                } catch (e) {
-                                    // Fallback for iOS - select the text
-                                    const input = document.querySelector('.ios-modal-input') as HTMLInputElement;
-                                    if (input) {
-                                        input.select();
-                                        document.execCommand('copy');
-                                        alert('✅ Lien copié !');
+                                <input
+                                    type="text"
+                                    value={shareUrl}
+                                    readOnly
+                                    className="ios-modal-input"
+                                    style={{ marginBottom: '1rem', fontSize: '0.8rem' }}
+                                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                                />
+
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            await navigator.clipboard.writeText(shareUrl);
+                                            alert('✅ Lien copié !');
+                                        } catch (e) {
+                                            const input = document.querySelector('.ios-modal-input[type="text"]') as HTMLInputElement;
+                                            if (input) {
+                                                input.select();
+                                                document.execCommand('copy');
+                                                alert('✅ Lien copié !');
+                                            }
+                                        }
+                                    }}
+                                    className="ios-modal-btn primary"
+                                >
+                                    📋 Copier le lien
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const res = await fetch('/api/share', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                packId: pack.id,
+                                                expirationDays: expirationDays,
+                                            }),
+                                        });
+                                        const data = await res.json();
+                                        if (data.shareUrl) {
+                                            setShareUrl(data.shareUrl);
+                                        } else {
+                                            alert('Erreur: ' + (data.error || 'Impossible de créer le lien'));
+                                        }
+                                    } catch (err) {
+                                        console.error('Share error:', err);
+                                        alert('Erreur lors de la création du lien');
                                     }
-                                }
-                            }}
-                            className="ios-modal-btn primary"
-                        >
-                            📋 Copier le lien
-                        </button>
+                                }}
+                                className="ios-modal-btn primary"
+                            >
+                                🔗 Générer le lien
+                            </button>
+                        )}
+
                         <button
-                            onClick={() => setShowShareModal(false)}
+                            onClick={() => {
+                                setShowShareModal(false);
+                                setShareUrl('');
+                            }}
                             className="ios-modal-btn secondary"
                         >
                             Fermer
