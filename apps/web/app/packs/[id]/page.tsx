@@ -7,6 +7,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { SwipeableItem } from '@/components/SwipeableItem';
+import { useToast } from '@/lib/toast-context';
+
 
 interface Document {
     id: string;
@@ -40,6 +43,7 @@ export default function PackDetailPage() {
     const params = useParams();
     const router = useRouter();
     const packId = params.id as string;
+    const { showToast } = useToast();
 
     const [pack, setPack] = useState<Pack | null>(null);
     const [availableDocs, setAvailableDocs] = useState<Document[]>([]);
@@ -50,6 +54,7 @@ export default function PackDetailPage() {
     const [shareUrl, setShareUrl] = useState('');
     const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
     const [expirationDays, setExpirationDays] = useState(7);
+
 
 
     const fetchPack = useCallback(async () => {
@@ -260,35 +265,39 @@ export default function PackDetailPage() {
             {pack.documents && pack.documents.length > 0 ? (
                 <div className="dark-docs-list">
                     {pack.documents.map((doc) => (
-                        <div key={doc.id} className="dark-doc-list-item">
-                            <div className="dark-doc-list-icon">📄</div>
-                            <div className="dark-doc-list-info">
-                                <p className="dark-doc-list-title">{doc.title}</p>
-                                <p className="dark-doc-list-meta">
-                                    {new Date(doc.createdAt).toLocaleDateString('fr-FR')}
-                                </p>
+                        <SwipeableItem
+                            key={doc.id}
+                            onSwipeLeft={() => {
+                                handleRemoveDocument(doc.id);
+                                showToast('Document retiré du pack', 'success');
+                            }}
+                            leftAction={{ icon: '🗑️', label: 'Retirer', color: '#EF4444' }}
+                        >
+                            <div className="dark-doc-list-item">
+                                <div className="dark-doc-list-icon">📄</div>
+                                <div className="dark-doc-list-info">
+                                    <p className="dark-doc-list-title">{doc.title}</p>
+                                    <p className="dark-doc-list-meta">
+                                        {new Date(doc.createdAt).toLocaleDateString('fr-FR')}
+                                    </p>
+                                </div>
+                                <div className="dark-doc-list-actions">
+                                    {doc.filePath && (
+                                        <a
+                                            href={doc.filePath}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="dark-doc-action-btn view"
+                                        >
+                                            👁️
+                                        </a>
+                                    )}
+                                </div>
                             </div>
-                            <div className="dark-doc-list-actions">
-                                {doc.filePath && (
-                                    <a
-                                        href={doc.filePath}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="dark-doc-action-btn view"
-                                    >
-                                        👁️
-                                    </a>
-                                )}
-                                <button
-                                    className="dark-doc-action-btn delete"
-                                    onClick={() => handleRemoveDocument(doc.id)}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
+                        </SwipeableItem>
                     ))}
                 </div>
+
             ) : (
                 <div className="dark-empty">
                     <div className="dark-empty-icon">📂</div>
