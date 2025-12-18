@@ -67,45 +67,19 @@ function Paywall({ onUnlock }: { onUnlock: () => void }) {
     const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
 
     return (
-        <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2rem',
-            textAlign: 'center',
-        }}>
-            <div style={{
-                width: '100px',
-                height: '100px',
-                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                borderRadius: '2rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '3rem',
-                marginBottom: '1.5rem',
-            }}>
+        <div className="paywall-container">
+            <div className="paywall-icon">
                 🚀
             </div>
 
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+            <h2 className="paywall-title">
                 Débloquez Mes Démarches
             </h2>
-            <p style={{ color: '#6B7280', marginBottom: '2rem', maxWidth: '400px' }}>
+            <p className="paywall-subtitle">
                 Simplifiez toutes vos démarches administratives avec des checklists intelligentes
             </p>
 
-            <div style={{
-                background: '#F9FAFB',
-                borderRadius: '1rem',
-                padding: '1.5rem',
-                marginBottom: '2rem',
-                textAlign: 'left',
-                width: '100%',
-                maxWidth: '400px',
-            }}>
+            <div className="paywall-features">
                 {[
                     '✅ Checklists prêtes à l\'emploi',
                     '✅ Suivi des pièces manquantes',
@@ -114,80 +88,50 @@ function Paywall({ onUnlock }: { onUnlock: () => void }) {
                     '✅ Documents illimités',
                     '✅ OCR et recherche texte',
                 ].map((feature, i) => (
-                    <div key={i} style={{ padding: '0.5rem 0', fontSize: '0.95rem' }}>
+                    <div key={i} className="paywall-feature">
                         {feature}
                     </div>
                 ))}
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="paywall-plans">
                 {/* Monthly Plan */}
                 <button
                     onClick={() => setSelectedPlan('monthly')}
-                    style={{
-                        padding: '1rem 1.5rem',
-                        border: selectedPlan === 'monthly' ? '2px solid #3B82F6' : '2px solid #E5E7EB',
-                        borderRadius: '1rem',
-                        cursor: 'pointer',
-                        background: selectedPlan === 'monthly' ? '#EFF6FF' : 'white',
-                        transition: 'all 0.2s',
-                    }}
+                    className={`paywall-plan ${selectedPlan === 'monthly' ? 'active' : ''}`}
                 >
-                    <div style={{ fontWeight: 600 }}>Mensuel</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3B82F6' }}>3,99 €</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>/mois</div>
+                    <div className="paywall-plan-name">Mensuel</div>
+                    <div className="paywall-plan-price">3,99 €</div>
+                    <div className="paywall-plan-period">/mois</div>
                 </button>
 
                 {/* Yearly Plan */}
                 <button
                     onClick={() => setSelectedPlan('yearly')}
-                    style={{
-                        padding: '1rem 1.5rem',
-                        border: selectedPlan === 'yearly' ? '2px solid #3B82F6' : '2px solid #E5E7EB',
-                        borderRadius: '1rem',
-                        background: selectedPlan === 'yearly' ? '#EFF6FF' : 'white',
-                        cursor: 'pointer',
-                        position: 'relative',
-                        transition: 'all 0.2s',
-                    }}
+                    className={`paywall-plan ${selectedPlan === 'yearly' ? 'active' : ''}`}
                 >
-                    <div style={{
-                        position: 'absolute',
-                        top: '-0.5rem',
-                        right: '-0.5rem',
-                        background: '#10B981',
-                        color: 'white',
-                        fontSize: '0.625rem',
-                        fontWeight: 700,
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '0.5rem',
-                    }}>
-                        -58%
-                    </div>
-                    <div style={{ fontWeight: 600 }}>Annuel</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3B82F6' }}>29,99 €</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>/an</div>
+                    <span className="paywall-badge">-58%</span>
+                    <div className="paywall-plan-name">Annuel</div>
+                    <div className="paywall-plan-price">29,99 €</div>
+                    <div className="paywall-plan-period">/an</div>
                 </button>
             </div>
 
-            <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '1rem' }}>
+            <p className="paywall-selected">
                 Plan sélectionné : <strong>{selectedPlan === 'monthly' ? '3,99 €/mois' : '29,99 €/an (2,50 €/mois)'}</strong>
             </p>
 
-            <button
-                onClick={onUnlock}
-                className="btn-primary"
-                style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}
-            >
+            <button onClick={onUnlock} className="paywall-cta">
                 {selectedPlan === 'monthly' ? 'Souscrire à 3,99 €/mois' : 'Souscrire à 29,99 €/an'}
             </button>
 
-            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '1rem' }}>
+            <p className="paywall-legal">
                 Annulez à tout moment • Restaurer achats
             </p>
         </div>
     );
 }
+
 
 
 export function DemarchesView() {

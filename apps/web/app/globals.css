@@ -5581,3 +5581,335 @@ body {
         margin: auto;
     }
 }
+
+/* ============================================
+   ONBOARDING MODAL
+   ============================================ */
+
+.onboarding-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.onboarding-modal {
+    background: var(--color-surface);
+    border-radius: var(--radius-2xl);
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.onboarding-progress {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.onboarding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-border);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.onboarding-dot.active {
+    width: 24px;
+    border-radius: 4px;
+    background: var(--color-primary);
+}
+
+.onboarding-content {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.onboarding-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.onboarding-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 0.5rem;
+}
+
+.onboarding-description {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.onboarding-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.onboarding-btn {
+    width: 100%;
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.onboarding-btn.primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.onboarding-btn.primary:hover {
+    background: var(--color-primary-dark);
+}
+
+.onboarding-btn.secondary {
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.onboarding-btn.secondary:hover {
+    color: var(--color-text);
+}
+
+/* ============================================
+   PAGE TRANSITION
+   ============================================ */
+
+.page-transition {
+    width: 100%;
+    min-height: 100%;
+}
+
+.page-transition.transitioning {
+    pointer-events: none;
+}
+
+/* ============================================
+   PAYWALL COMPONENT (Dark Mode)
+   ============================================ */
+
+.paywall-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+}
+
+.paywall-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
+}
+
+.paywall-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: var(--color-text);
+}
+
+.paywall-subtitle {
+    color: var(--color-text-secondary);
+    margin-bottom: 2rem;
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.paywall-features {
+    background: var(--color-surface);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid var(--color-border);
+}
+
+.paywall-feature {
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+    color: var(--color-text);
+}
+
+.paywall-plans {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.paywall-plan {
+    padding: 1rem 1.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 1rem;
+    cursor: pointer;
+    background: var(--color-surface);
+    transition: all 0.2s;
+    position: relative;
+}
+
+.paywall-plan.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.paywall-plan-name {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.paywall-plan-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.paywall-plan-period {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+.paywall-badge {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background: var(--color-success);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.paywall-selected {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 1rem;
+}
+
+.paywall-selected strong {
+    color: var(--color-text);
+}
+
+.paywall-cta {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.paywall-cta:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-2px);
+}
+
+.paywall-legal {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 1rem;
+}
+
+/* ============================================
+   IMPROVED DÉMARCHES TEMPLATES
+   ============================================ */
+
+.demarches-templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.demarches-template-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.demarches-template-card:hover {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+}
+
+.demarches-template-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.demarches-template-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text);
+    text-align: center;
+    line-height: 1.3;
+}

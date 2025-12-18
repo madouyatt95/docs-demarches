@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { useState } from 'react';
 import { PremiumProvider } from '@/lib/premium-context';
+import { OnboardingModal } from '@/components/OnboardingModal';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -27,9 +28,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <QueryClientProvider client={queryClient}>
                 <PremiumProvider>
                     {children}
+                    <OnboardingModal />
                 </PremiumProvider>
             </QueryClientProvider>
         </SessionProvider>
     );
 }
+
 
