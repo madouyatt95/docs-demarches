@@ -5,7 +5,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface Document {
+    id: string;
+    title: string;
+    categoryId: string | null;
+}
 
 interface ShareModalProps {
     isOpen: boolean;
@@ -13,6 +19,19 @@ interface ShareModalProps {
     documentId?: string;
     documentTitle?: string;
 }
+
+// Category emoji mapping
+const categoryEmojis: Record<string, string> = {
+    'cat_identity': '🪪',
+    'cat_housing': '🏠',
+    'cat_work': '💼',
+    'cat_vehicle': '🚗',
+    'cat_finance': '💰',
+    'cat_health': '🏥',
+    'cat_education': '🎓',
+    'cat_family': '👨‍👩‍👧',
+    'default': '📄',
+};
 
 export function ShareModal({ isOpen, onClose, documentId, documentTitle }: ShareModalProps) {
     const [expirationDays, setExpirationDays] = useState(7);
@@ -23,6 +42,38 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
+    // Document selection state (when not pre-selected)
+    const [documents, setDocuments] = useState<Document[]>([]);
+    const [selectedDocId, setSelectedDocId] = useState<string | null>(documentId || null);
+    const [selectedDocTitle, setSelectedDocTitle] = useState<string>(documentTitle || '');
+    const [isLoadingDocs, setIsLoadingDocs] = useState(false);
+
+    // Fetch documents when modal opens and no document is pre-selected
+    useEffect(() => {
+        if (isOpen && !documentId) {
+            fetchDocuments();
+        }
+        if (documentId) {
+            setSelectedDocId(documentId);
+            setSelectedDocTitle(documentTitle || 'Document');
+        }
+    }, [isOpen, documentId, documentTitle]);
+
+    const fetchDocuments = async () => {
+        setIsLoadingDocs(true);
+        try {
+            const res = await fetch('/api/documents');
+            if (res.ok) {
+                const data = await res.json();
+                setDocuments(data.data || []);
+            }
+        } catch (err) {
+            console.error('Error fetching documents:', err);
+        } finally {
+            setIsLoadingDocs(false);
+        }
+    };
+
     const resetState = () => {
         setExpirationDays(7);
         setPassword('');
@@ -31,6 +82,10 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
         setIsGenerating(false);
         setError(null);
         setCopied(false);
+        if (!documentId) {
+            setSelectedDocId(null);
+            setSelectedDocTitle('');
+        }
     };
 
     const handleClose = () => {
@@ -38,8 +93,13 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
         onClose();
     };
 
+    const handleSelectDocument = (doc: Document) => {
+        setSelectedDocId(doc.id);
+        setSelectedDocTitle(doc.title);
+    };
+
     const handleGenerateLink = async () => {
-        if (!documentId) return;
+        if (!selectedDocId) return;
 
         setIsGenerating(true);
         setError(null);
@@ -49,7 +109,7 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    documentId,
+                    documentId: selectedDocId,
                     expirationDays,
                     password: usePassword ? password : null,
                 }),
@@ -94,8 +154,8 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: documentTitle || 'Document partagé',
-                    text: `Voici un lien vers ${documentTitle || 'mon document'}`,
+                    title: selectedDocTitle || 'Document partagé',
+                    text: `Voici un lien vers ${selectedDocTitle || 'mon document'}`,
                     url: shareLink,
                 });
             } catch (err) {
@@ -119,10 +179,45 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
                 <div className="modal-body">
                     {!shareLink ? (
                         <>
-                            <p className="share-doc-title">{documentTitle || 'Document'}</p>
-
                             {error && (
                                 <div className="modal-error">{error}</div>
+                            )}
+
+                            {/* Document Selection (if not pre-selected) */}
+                            {!documentId && (
+                                <div className="form-group">
+                                    <label className="form-label">Sélectionnez un document</label>
+                                    {isLoadingDocs ? (
+                                        <div className="dark-loading" style={{ padding: '1rem' }}>
+                                            <div className="dark-spinner"></div>
+                                        </div>
+                                    ) : documents.length > 0 ? (
+                                        <div className="share-doc-list">
+                                            {documents.map((doc) => (
+                                                <div
+                                                    key={doc.id}
+                                                    className={`share-doc-item ${selectedDocId === doc.id ? 'selected' : ''}`}
+                                                    onClick={() => handleSelectDocument(doc)}
+                                                >
+                                                    <span className="share-doc-item-icon">
+                                                        {categoryEmojis[doc.categoryId || 'default'] || '📄'}
+                                                    </span>
+                                                    <span className="share-doc-item-name">{doc.title}</span>
+                                                    {selectedDocId === doc.id && <span>✓</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p style={{ color: 'var(--color-text-secondary)', textAlign: 'center', padding: '1rem' }}>
+                                            Aucun document disponible
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Show selected document title */}
+                            {selectedDocId && (
+                                <p className="share-doc-title">📄 {selectedDocTitle}</p>
                             )}
 
                             {/* Expiration */}
@@ -168,7 +263,7 @@ export function ShareModal({ isOpen, onClose, documentId, documentTitle }: Share
                             <button
                                 className="share-generate-btn"
                                 onClick={handleGenerateLink}
-                                disabled={isGenerating || (usePassword && !password)}
+                                disabled={isGenerating || !selectedDocId || (usePassword && !password)}
                             >
                                 {isGenerating ? '⏳ Génération...' : '🔗 Générer le lien'}
                             </button>

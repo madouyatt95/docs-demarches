@@ -2419,13 +2419,14 @@ body {
 }
 
 .modal-container {
-    background: white;
+    background: var(--color-surface);
     width: 100%;
     height: 100%;
     max-height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    color: var(--color-text);
 }
 
 .modal-header {
@@ -2435,7 +2436,7 @@ body {
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
-    background: white;
+    background: var(--color-surface);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -2477,7 +2478,7 @@ body {
     padding: 1rem 1.25rem;
     padding-bottom: calc(1rem + var(--safe-area-bottom));
     border-top: 1px solid var(--color-border);
-    background: white;
+    background: var(--color-surface);
     flex-shrink: 0;
 }
 
@@ -2509,7 +2510,8 @@ body {
     border-radius: var(--radius-md);
     font-size: 1rem;
     outline: none;
-    background: white;
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
     transition: border-color 0.2s;
 }
 
@@ -5397,4 +5399,185 @@ body {
 
 .scanner-retry-btn:hover {
     background: var(--color-border);
+}
+
+/* ============================================
+   SHARE MODAL STYLES (Dark Mode)
+   ============================================ */
+
+.share-modal {
+    max-height: 85vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+.share-doc-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.share-doc-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.share-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.share-doc-item:last-child {
+    border-bottom: none;
+}
+
+.share-doc-item:hover {
+    background: var(--color-surface-elevated);
+}
+
+.share-doc-item.selected {
+    background: rgba(59, 130, 246, 0.15);
+    border-left: 3px solid var(--color-primary);
+}
+
+.share-doc-item-icon {
+    font-size: 1.25rem;
+}
+
+.share-doc-item-name {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.share-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.share-toggle-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
+}
+
+.share-generate-btn {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-top: 1rem;
+}
+
+.share-generate-btn:hover {
+    background: var(--color-primary-dark);
+}
+
+.share-generate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.share-success {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.share-success-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.share-success h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 0.25rem;
+}
+
+.share-expiry {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin: 0 0 1rem;
+}
+
+.share-link-box {
+    margin-bottom: 1rem;
+}
+
+.share-link-input {
+    text-align: center;
+    font-size: 0.85rem;
+    background: var(--color-background) !important;
+}
+
+.share-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.share-copy-btn,
+.share-native-btn {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.share-copy-btn {
+    background: var(--color-primary);
+    color: white;
+}
+
+.share-copy-btn:hover {
+    background: var(--color-primary-dark);
+}
+
+.share-native-btn {
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+}
+
+.share-native-btn:hover {
+    background: var(--color-border);
+}
+
+.share-password-reminder {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(245, 158, 11, 0.15);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--color-warning);
+}
+
+@media (min-width: 640px) {
+    .share-modal {
+        max-width: 420px;
+        border-radius: var(--radius-2xl);
+        margin: auto;
+    }
 }
