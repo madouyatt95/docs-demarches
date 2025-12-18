@@ -8,7 +8,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { useState } from 'react';
 import { PremiumProvider } from '@/lib/premium-context';
+import { ToastProvider } from '@/lib/toast-context';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { ToastContainer } from '@/components/Toast';
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -27,12 +29,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SessionProvider>
             <QueryClientProvider client={queryClient}>
                 <PremiumProvider>
-                    {children}
-                    <OnboardingModal />
+                    <ToastProvider>
+                        {children}
+                        <OnboardingModal />
+                        <ToastContainer />
+                    </ToastProvider>
                 </PremiumProvider>
             </QueryClientProvider>
         </SessionProvider>
     );
 }
-
-
