@@ -5,6 +5,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { DocumentSkeleton } from '@/components/Skeleton';
+import { SwipeableItem } from '@/components/SwipeableItem';
+import { useToast } from '@/lib/toast-context';
 
 interface Document {
     id: string;
@@ -102,6 +105,7 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userName, setUserName] = useState('');
+    const { showToast } = useToast();
 
     // Edit document state
     const [editingDocId, setEditingDocId] = useState<string | null>(null);
@@ -145,15 +149,17 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
             });
 
             if (res.ok) {
+                showToast('Document supprimé', 'success');
                 fetchDocuments();
             } else {
-                alert('Erreur lors de la suppression');
+                showToast('Erreur lors de la suppression', 'error');
             }
         } catch (err) {
             console.error('Error deleting document:', err);
-            alert('Erreur lors de la suppression');
+            showToast('Erreur lors de la suppression', 'error');
         }
     };
+
 
     const startEditDocument = (doc: Document) => {
         setEditingDocId(doc.id);
@@ -181,16 +187,18 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
             });
 
             if (res.ok) {
+                showToast('Document modifié', 'success');
                 cancelEditDocument();
                 fetchDocuments();
             } else {
-                alert('Erreur lors de la modification');
+                showToast('Erreur lors de la modification', 'error');
             }
         } catch (err) {
             console.error('Error editing document:', err);
-            alert('Erreur lors de la modification');
+            showToast('Erreur lors de la modification', 'error');
         }
     };
+
 
     // Listen for refresh events
     useEffect(() => {
@@ -269,12 +277,13 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
             </div>
 
             {/* Loading State */}
+            {/* Loading State with Skeleton */}
             {isLoading && (
-                <div className="dark-loading">
-                    <div className="dark-spinner"></div>
-                    <p>Chargement...</p>
+                <div className="dark-loading-skeleton">
+                    <DocumentSkeleton count={4} />
                 </div>
             )}
+
 
             {/* Error State */}
             {error && !isLoading && (
