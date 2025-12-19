@@ -44,6 +44,15 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [isPremium] = useState(false); // TODO: Set to true when Mindee feature is ready
 
+    // AI classification state
+    const [aiClassification, setAiClassification] = useState<{
+        categoryId: string;
+        confidence: number;
+        suggestedTitle?: string;
+        method: string;
+    } | null>(null);
+    const [isClassifying, setIsClassifying] = useState(false);
+
     const categories = [
         { id: 'cat_identity', name: 'Identité', emoji: '🪪' },
         { id: 'cat_housing', name: 'Logement', emoji: '🏠' },
@@ -114,10 +123,44 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
                 },
             });
 
-            setExtractedText(result.data.text);
-            const firstLine = result.data.text.split('\n')[0]?.trim() || '';
+            const text = result.data.text;
+            setExtractedText(text);
+            const firstLine = text.split('\n')[0]?.trim() || '';
             const suggestedTitle = firstLine.slice(0, 50) || 'Document scanné';
             setTitle(suggestedTitle);
+
+            // AI Classification - call /api/classify with extracted text
+            if (text.trim().length > 20) {
+                setIsClassifying(true);
+                try {
+                    const classifyRes = await fetch('/api/classify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text }),
+                    });
+
+                    if (classifyRes.ok) {
+                        const classifyData = await classifyRes.json();
+                        setAiClassification(classifyData);
+
+                        // Auto-fill category if confidence is high enough
+                        if (classifyData.categoryId && classifyData.confidence >= 0.5) {
+                            setCategoryId(classifyData.categoryId);
+                        }
+
+                        // Update title if AI suggests one
+                        if (classifyData.suggestedTitle) {
+                            setTitle(classifyData.suggestedTitle);
+                        }
+                    }
+                } catch (classifyError) {
+                    console.error('Classification error:', classifyError);
+                    // Silent fail - classification is optional
+                } finally {
+                    setIsClassifying(false);
+                }
+            }
+
             setStep('review');
         } catch (err) {
             console.error('OCR Error:', err);
@@ -125,6 +168,7 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
             setStep('capture');
         }
     };
+
 
     const handleEnhanceDetection = async () => {
         if (!capturedFile || !isPremium) return;
