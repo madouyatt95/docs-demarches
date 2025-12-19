@@ -12,9 +12,11 @@ export function NotificationSettings() {
     const [permission, setPermission] = useState<NotificationPermission>('default');
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isClient, setIsClient] = useState(false);
     const { showToast } = useToast();
 
     useEffect(() => {
+        setIsClient(true);
         if ('Notification' in window) {
             setPermission(Notification.permission);
         }
@@ -22,6 +24,7 @@ export function NotificationSettings() {
     }, []);
 
     const checkSubscription = async () => {
+        if (typeof window === 'undefined') return;
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             try {
                 const registration = await navigator.serviceWorker.ready;
@@ -32,6 +35,7 @@ export function NotificationSettings() {
             }
         }
     };
+
 
     const subscribeToPush = async () => {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -130,12 +134,27 @@ export function NotificationSettings() {
         return outputArray;
     }
 
-    // Don't render if push not supported
-    if (typeof window !== 'undefined' && (!('Notification' in window) || !('PushManager' in window))) {
+    // Don't render until client-side, or if push not supported
+    if (!isClient) {
+        return (
+            <div className="notification-settings">
+                <div className="notification-settings-header">
+                    <span className="notification-icon">🔔</span>
+                    <div className="notification-settings-info">
+                        <h3>Notifications</h3>
+                        <p>Chargement...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!('Notification' in window) || !('PushManager' in window)) {
         return null;
     }
 
     return (
+
         <div className="notification-settings">
             <div className="notification-settings-header">
                 <span className="notification-icon">🔔</span>
