@@ -8,7 +8,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { DocumentSkeleton } from '@/components/Skeleton';
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { NotificationSettings } from '@/components/NotificationSettings';
 import { useToast } from '@/lib/toast-context';
+
 
 
 interface Document {
@@ -234,7 +236,11 @@ export function DocumentsView({ onOpenModal, onScannerClick, onShareClick }: Doc
                     </div>
                 </div>
 
+                {/* Notification Settings */}
+                <NotificationSettings />
+
                 {/* Quick Actions 2x2 Grid */}
+
                 <div className="dark-section-header">
                     <h2 className="dark-section-title">Actions rapides</h2>
                 </div>
