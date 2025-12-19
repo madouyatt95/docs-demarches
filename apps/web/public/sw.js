@@ -1,5 +1,5 @@
 // DocsBox Service Worker for PWA
-const CACHE_NAME = 'docsbox-v1';
+const CACHE_NAME = 'docsbox-v2';
 const urlsToCache = [
     '/',
     '/packs',
@@ -68,3 +68,79 @@ self.addEventListener('fetch', (event) => {
             })
     );
 });
+
+// ============================================
+// PUSH NOTIFICATIONS
+// ============================================
+
+// Push event - receive notification from server
+self.addEventListener('push', (event) => {
+    console.log('Push notification received');
+
+    let data = {
+        title: '📋 DocsBox',
+        body: 'Vous avez une notification',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-72.png',
+        data: { url: '/' }
+    };
+
+    try {
+        if (event.data) {
+            data = { ...data, ...event.data.json() };
+        }
+    } catch (e) {
+        console.error('Error parsing push data:', e);
+    }
+
+    const options = {
+        body: data.body,
+        icon: data.icon || '/icons/icon-192.png',
+        badge: data.badge || '/icons/icon-72.png',
+        vibrate: [100, 50, 100],
+        data: data.data || { url: '/' },
+        actions: [
+            { action: 'open', title: '📂 Voir' },
+            { action: 'close', title: '✕ Fermer' }
+        ],
+        requireInteraction: true
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    if (event.action === 'close') {
+        return;
+    }
+
+    const urlToOpen = event.notification.data?.url || '/';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then((windowClients) => {
+                // Check if there's already a window open
+                for (const client of windowClients) {
+                    if (client.url.includes(self.location.origin) && 'focus' in client) {
+                        client.navigate(urlToOpen);
+                        return client.focus();
+                    }
+                }
+                // Open new window if none exists
+                if (clients.openWindow) {
+                    return clients.openWindow(urlToOpen);
+                }
+            })
+    );
+});
+
+// Notification close event
+self.addEventListener('notificationclose', (event) => {
+    console.log('Notification closed', event);
+});
+
