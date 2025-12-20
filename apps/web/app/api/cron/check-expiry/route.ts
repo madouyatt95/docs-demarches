@@ -139,11 +139,11 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({
-            message: 'Notifications envoyées',
+            message: sentCount > 0 ? 'Notifications envoyées' : 'Erreurs lors de l\'envoi',
             expiringDocuments: expiringDocs.length,
             notificationsSent: sentCount,
             errors: errorCount,
-            errorDetails: errorDetails.slice(0, 5), // Show first 5 errors
+            ...(errorCount > 0 && { errorDetails: errorDetails.slice(0, 10) }),
         });
     } catch (error: any) {
         console.error('Cron check-expiry error:', error);
