@@ -24,8 +24,10 @@ export async function GET(request: NextRequest) {
         // Verify cron secret (optional security)
         const authHeader = request.headers.get('authorization');
         const cronSecret = process.env.CRON_SECRET;
+        const { searchParams } = new URL(request.url);
+        const isManualTrigger = searchParams.get('debug') === 'true';
 
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+        if (!isManualTrigger && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
             return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
         }
 
@@ -65,8 +67,10 @@ export async function GET(request: NextRequest) {
             return days >= -7 && days <= 30;
         });
 
+        console.log(`[Cron] Found ${expiringDocs.length} expiring documents out of ${(documents || []).length}`);
+
         if (expiringDocs.length === 0) {
-            return NextResponse.json({ message: 'Aucun document expirant', sent: 0 });
+            return NextResponse.json({ message: 'Aucun document expirant', totalDocs: documents?.length, sent: 0 });
         }
 
         // Get all push subscriptions
@@ -78,17 +82,26 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({
                 message: 'Aucun abonné aux notifications',
                 expiringDocuments: expiringDocs.length,
+                totalDocuments: documents?.length,
                 sent: 0
             });
         }
 
         let sentCount = 0;
         let errorCount = 0;
-        const errorDetails: string[] = [];
+        const logs: string[] = [];
 
         // Send notifications for each expiring document
         for (const doc of expiringDocs) {
             const days = daysUntil(doc.expirationDate);
+
+            // Filter subscriptions: only send to the owner of THIS document
+            const userSubscriptions = subscriptions.filter(sub => sub.user_id === doc.userId);
+
+            if (userSubscriptions.length === 0) {
+                logs.push(`No subscription for user ${doc.userId} (document: ${doc.title})`);
+                continue;
+            }
 
             const payload = JSON.stringify({
                 title: '📋 DocsBox - Alerte expiration',
@@ -102,10 +115,8 @@ export async function GET(request: NextRequest) {
                 data: { url: '/' },
             });
 
-            // Send to all subscribers (in a real app, filter by userId)
-            for (const sub of subscriptions) {
+            for (const sub of userSubscriptions) {
                 try {
-                    // Create subscription object in web-push format
                     const pushSubscription = {
                         endpoint: sub.endpoint,
                         keys: {
@@ -116,34 +127,25 @@ export async function GET(request: NextRequest) {
 
                     await webpush.sendNotification(pushSubscription, payload);
                     sentCount++;
+                    logs.push(`Sent to user ${doc.userId} for ${doc.title}`);
                 } catch (pushError: any) {
-                    console.error('Push error details:', {
-                        error: pushError.message || pushError,
-                        statusCode: pushError.statusCode,
-                        endpoint: sub.endpoint?.substring(0, 50) + '...',
-                        docTitle: doc.title,
-                    });
-
-                    errorDetails.push(`${doc.title}: ${pushError.message || 'Unknown error'} (HTTP ${pushError.statusCode || 'N/A'})`);
+                    console.error('Push error:', pushError.message);
                     errorCount++;
+                    logs.push(`Error for user ${doc.userId} (${doc.title}): ${pushError.message}`);
 
-                    // Remove invalid subscription (410 Gone, 404 Not Found, or 403 Forbidden)
                     if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
-                        await getSupabase()
-                            .from('push_subscriptions')
-                            .delete()
-                            .eq('endpoint', sub.endpoint);
+                        await getSupabase().from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
                     }
                 }
             }
         }
 
         return NextResponse.json({
-            message: sentCount > 0 ? 'Notifications envoyées' : 'Erreurs lors de l\'envoi',
+            message: sentCount > 0 ? 'Notifications envoyées' : 'Terminé',
             expiringDocuments: expiringDocs.length,
             notificationsSent: sentCount,
             errors: errorCount,
-            ...(errorCount > 0 && { errorDetails: errorDetails.slice(0, 10) }),
+            logs: logs.slice(0, 50)
         });
     } catch (error: any) {
         console.error('Cron check-expiry error:', error);
