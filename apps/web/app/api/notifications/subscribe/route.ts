@@ -20,16 +20,21 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Upsert subscription (update if exists, insert if not)
+        // First, delete ALL existing subscriptions for this user
+        // This ensures old subscriptions with different VAPID keys are removed
+        await getSupabase()
+            .from('push_subscriptions')
+            .delete()
+            .eq('user_id', userId);
+
+        // Then insert the new subscription
         const { error } = await getSupabase()
             .from('push_subscriptions')
-            .upsert({
+            .insert({
                 user_id: userId,
                 endpoint: subscription.endpoint,
                 keys: subscription.keys,
                 created_at: new Date().toISOString(),
-            }, {
-                onConflict: 'user_id,endpoint',
             });
 
         if (error) {
