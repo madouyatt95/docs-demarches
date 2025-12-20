@@ -46,18 +46,19 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 // Fallback: Demo mode when DB is not connected
-                if (credentials.email === 'demo@docsbox.fr' && credentials.password === 'demo123') {
+                if ((credentials.email === 'demo@docsbox.fr' || credentials.email === 'demo@docsbox.app') && credentials.password === 'demo123') {
                     return {
                         id: 'demo_user',
-                        email: 'demo@docsbox.fr',
+                        email: credentials.email,
                         name: 'Utilisateur Demo',
-                        isPremium: false,
+                        isPremium: true,
                     };
                 }
 
-                // Accept any email/password for testing when DB not available
+                // Accept any email/password for testing when DB not available (Deterministic ID for testing)
+                const mockId = `user_${Buffer.from(credentials.email).toString('hex').slice(0, 10)}`;
                 return {
-                    id: `user_${Date.now()}`,
+                    id: mockId,
                     email: credentials.email,
                     name: credentials.email.split('@')[0],
                     isPremium: false,
