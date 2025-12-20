@@ -122,6 +122,60 @@ export function NotificationSettings() {
         }
     };
 
+    // Repair: unsubscribe and resubscribe with current VAPID keys
+    const repairSubscription = async () => {
+        setIsLoading(true);
+        showToast('Réparation en cours...', 'info');
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const oldSubscription = await registration.pushManager.getSubscription();
+
+            // Unsubscribe from old
+            if (oldSubscription) {
+                await oldSubscription.unsubscribe();
+                await fetch('/api/notifications/subscribe', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: oldSubscription.endpoint }),
+                });
+            }
+
+            // Wait a moment
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Subscribe with current VAPID keys
+            const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            if (!vapidPublicKey) {
+                throw new Error('VAPID key missing');
+            }
+
+            const newSubscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+
+            // Save new subscription
+            const response = await fetch('/api/notifications/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription: newSubscription }),
+            });
+
+            if (response.ok) {
+                setIsSubscribed(true);
+                showToast('Notifications réparées ! 🔧✅', 'success');
+            } else {
+                throw new Error('Failed to save new subscription');
+            }
+        } catch (error) {
+            console.error('Repair error:', error);
+            showToast('Erreur lors de la réparation', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const sendTestNotification = async () => {
         setIsLoading(true);
         try {
@@ -247,7 +301,15 @@ export function NotificationSettings() {
                             onClick={sendTestNotification}
                             disabled={isLoading}
                         >
-                            🧪 Tester
+                            🧪 Test
+                        </button>
+                        <button
+                            className="notification-test-btn"
+                            onClick={repairSubscription}
+                            disabled={isLoading}
+                            title="Réparer si les notifications automatiques ne fonctionnent pas"
+                        >
+                            🔧
                         </button>
                     </div>
                 ) : (
