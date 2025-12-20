@@ -143,15 +143,12 @@ export async function GET(request: NextRequest) {
                     console.error('Push error:', pushError);
                     errorCount++;
                     const statusCode = pushError.statusCode || 'N/A';
-                    const endpointSnippet = sub.endpoint ? sub.endpoint.substring(0, 30) + '...' : 'unknown';
-
-                    // Log more error details
                     let errorDetail = pushError.message || 'Unknown error';
                     if (pushError.body) {
-                        errorDetail += ` - Body: ${pushError.body}`;
+                        errorDetail += ` (Body: ${pushError.body.substring(0, 100)})`;
                     }
 
-                    logs.push(`Error (HTTP ${statusCode}) for ${doc.userId}: ${errorDetail}`);
+                    logs.push(`Error ${statusCode} for ${doc.userId}: ${errorDetail}`);
 
                     if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
                         await getSupabase().from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
@@ -161,8 +158,12 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({
-            version: '1.0.2',
-            serverVapidPublic: vapidPublicKey ? vapidPublicKey.substring(0, 10) + '...' : 'MISSING',
+            version: '1.0.3',
+            vapidKeys: {
+                publicPresent: !!vapidPublicKey,
+                privatePresent: !!vapidPrivateKey,
+                publicStart: vapidPublicKey ? vapidPublicKey.substring(0, 5) : 'N/A'
+            },
             message: sentCount > 0 ? 'Notifications envoyées' : 'Terminé',
             expiringDocuments: expiringDocs.length,
             notificationsSent: sentCount,
