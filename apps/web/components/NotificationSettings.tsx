@@ -278,6 +278,9 @@ export function NotificationSettings() {
                 <div className="notification-settings-info">
                     <h3>Notifications</h3>
                     <p>Alertes pour les documents qui expirent</p>
+                    <p style={{ fontSize: '10px', opacity: 0.5 }}>
+                        VAPID: {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? `${process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY.substring(0, 5)}...` : 'MANQUANTE'}
+                    </p>
                 </div>
             </div>
 
