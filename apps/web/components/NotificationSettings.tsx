@@ -122,7 +122,33 @@ export function NotificationSettings() {
         }
     };
 
+    const sendTestNotification = async () => {
+        setIsLoading(true);
+        try {
+            // Use the browser's native notification API for immediate test
+            if (Notification.permission === 'granted') {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification('🔔 Test DocsBox', {
+                    body: 'Les notifications fonctionnent parfaitement !',
+                    icon: '/icons/icon-192.png',
+                    badge: '/icons/icon-72.png',
+                    vibrate: [100, 50, 100],
+                    data: { url: '/' },
+                });
+                showToast('Notification de test envoyée !', 'success');
+            } else {
+                showToast('Activez d\'abord les notifications', 'warning');
+            }
+        } catch (error) {
+            console.error('Test notification error:', error);
+            showToast('Erreur lors du test', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // Helper to convert VAPID key
+
     function urlBase64ToUint8Array(base64String: string) {
         const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
         const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -170,13 +196,22 @@ export function NotificationSettings() {
                         <span>⚠️ Bloquées dans le navigateur</span>
                     </div>
                 ) : isSubscribed ? (
-                    <button
-                        className="notification-toggle active"
-                        onClick={unsubscribeFromPush}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? '⏳' : '✓'} Activées
-                    </button>
+                    <div className="notification-buttons">
+                        <button
+                            className="notification-toggle active"
+                            onClick={unsubscribeFromPush}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? '⏳' : '✓'} Activées
+                        </button>
+                        <button
+                            className="notification-test-btn"
+                            onClick={sendTestNotification}
+                            disabled={isLoading}
+                        >
+                            🧪 Tester
+                        </button>
+                    </div>
                 ) : (
                     <button
                         className="notification-toggle"
@@ -188,5 +223,6 @@ export function NotificationSettings() {
                 )}
             </div>
         </div>
+
     );
 }
