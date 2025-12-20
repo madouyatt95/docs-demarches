@@ -117,13 +117,24 @@ export async function GET(request: NextRequest) {
 
             for (const sub of userSubscriptions) {
                 try {
+                    // Safe key extraction
+                    let keys = sub.keys;
+                    if (typeof keys === 'string') {
+                        try { keys = JSON.parse(keys); } catch (e) { }
+                    }
+
                     const pushSubscription = {
                         endpoint: sub.endpoint,
                         keys: {
-                            p256dh: sub.keys?.p256dh || sub.keys?.['p256dh'],
-                            auth: sub.keys?.auth || sub.keys?.['auth'],
+                            p256dh: keys?.p256dh || keys?.['p256dh'],
+                            auth: keys?.auth || keys?.['auth'],
                         }
                     };
+
+                    if (!pushSubscription.keys.p256dh || !pushSubscription.keys.auth) {
+                        logs.push(`Missing keys for user ${doc.userId}`);
+                        continue;
+                    }
 
                     await webpush.sendNotification(pushSubscription, payload);
                     sentCount++;
