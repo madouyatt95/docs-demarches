@@ -179,22 +179,21 @@ export function NotificationSettings() {
     const sendTestNotification = async () => {
         setIsLoading(true);
         try {
-            // Use the browser's native notification API for immediate test
-            if (Notification.permission === 'granted') {
-                const registration = await navigator.serviceWorker.ready;
-                await registration.showNotification('🔔 Test DocsBox', {
-                    body: 'Les notifications fonctionnent parfaitement !',
-                    icon: '/icons/icon-192.png',
-                    badge: '/icons/icon-72.png',
-                    data: { url: '/' },
-                });
-                showToast('Notification de test envoyée !', 'success');
+            const response = await fetch('/api/notifications/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('Push envoyé ! Vérifie ton iPhone 🔔', 'success');
             } else {
-                showToast('Activez d\'abord les notifications', 'warning');
+                showToast(data.error || 'Erreur lors de l\'envoi', 'error');
             }
         } catch (error) {
             console.error('Test notification error:', error);
-            showToast('Erreur lors du test', 'error');
+            showToast('Erreur de connexion au serveur', 'error');
         } finally {
             setIsLoading(false);
         }
