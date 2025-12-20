@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
             }
 
             const payload = JSON.stringify({
-                title: '📋 DocsBox - Alerte expiration',
+                title: 'DocsBox - Alerte expiration',
                 body: days < 0
                     ? `"${doc.title}" a expiré il y a ${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''} !`
                     : days === 0
@@ -140,11 +140,18 @@ export async function GET(request: NextRequest) {
                     sentCount++;
                     logs.push(`Sent to user ${doc.userId} for ${doc.title}`);
                 } catch (pushError: any) {
-                    console.error('Push error:', pushError.message);
+                    console.error('Push error:', pushError);
                     errorCount++;
                     const statusCode = pushError.statusCode || 'N/A';
                     const endpointSnippet = sub.endpoint ? sub.endpoint.substring(0, 30) + '...' : 'unknown';
-                    logs.push(`Error (HTTP ${statusCode}) for user ${doc.userId} on endpoint ${endpointSnippet}: ${pushError.message}`);
+
+                    // Log more error details
+                    let errorDetail = pushError.message || 'Unknown error';
+                    if (pushError.body) {
+                        errorDetail += ` - Body: ${pushError.body}`;
+                    }
+
+                    logs.push(`Error (HTTP ${statusCode}) for ${doc.userId}: ${errorDetail}`);
 
                     if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
                         await getSupabase().from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
@@ -154,7 +161,7 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({
-            version: '1.0.1',
+            version: '1.0.2',
             serverVapidPublic: vapidPublicKey ? vapidPublicKey.substring(0, 10) + '...' : 'MISSING',
             message: sentCount > 0 ? 'Notifications envoyées' : 'Terminé',
             expiringDocuments: expiringDocs.length,
