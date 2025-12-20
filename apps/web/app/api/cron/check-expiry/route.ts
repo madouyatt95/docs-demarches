@@ -177,11 +177,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Erreur base de données' }, { status: 500 });
         }
 
-        // Find documents expiring in 7, 3, or 1 day
+        // Find documents expiring soon or recently expired (within -7 to +30 days)
         const expiringDocs = (documents || []).filter(doc => {
             if (!doc.expirationDate) return false;
             const days = daysUntil(doc.expirationDate);
-            return days === 7 || days === 3 || days === 1 || days === 0;
+            // Include: expired in last 7 days (-7 to 0) OR expiring soon (1 to 30 days)
+            return days >= -7 && days <= 30;
         });
 
         if (expiringDocs.length === 0) {
@@ -237,8 +238,12 @@ export async function GET(request: NextRequest) {
                             .delete()
                             .eq('endpoint', sub.endpoint);
                     }
-                } catch (pushError) {
-                    console.error('Push error:', pushError);
+                } catch (pushError: any) {
+                    console.error('Push error details:', {
+                        error: pushError.message || pushError,
+                        endpoint: sub.endpoint?.substring(0, 50) + '...',
+                        docTitle: doc.title,
+                    });
                     errorCount++;
                 }
             }
