@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({
+            version: '1.0.1',
             message: sentCount > 0 ? 'Notifications envoyées' : 'Terminé',
             expiringDocuments: expiringDocs.length,
             notificationsSent: sentCount,

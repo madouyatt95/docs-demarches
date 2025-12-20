@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         try {
             await webpush.sendNotification(pushSubscription, payload);
             return NextResponse.json({
+                version: '1.0.1',
                 success: true,
                 message: 'Notification de test envoyée !',
                 endpoint: sub.endpoint.substring(0, 50) + '...',
