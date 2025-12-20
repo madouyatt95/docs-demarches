@@ -142,7 +142,9 @@ export async function GET(request: NextRequest) {
                 } catch (pushError: any) {
                     console.error('Push error:', pushError.message);
                     errorCount++;
-                    logs.push(`Error for user ${doc.userId} (${doc.title}): ${pushError.message}`);
+                    const statusCode = pushError.statusCode || 'N/A';
+                    const endpointSnippet = sub.endpoint ? sub.endpoint.substring(0, 30) + '...' : 'unknown';
+                    logs.push(`Error (HTTP ${statusCode}) for user ${doc.userId} on endpoint ${endpointSnippet}: ${pushError.message}`);
 
                     if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
                         await getSupabase().from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
@@ -153,6 +155,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             version: '1.0.1',
+            serverVapidPublic: vapidPublicKey ? vapidPublicKey.substring(0, 10) + '...' : 'MISSING',
             message: sentCount > 0 ? 'Notifications envoyées' : 'Terminé',
             expiringDocuments: expiringDocs.length,
             notificationsSent: sentCount,
