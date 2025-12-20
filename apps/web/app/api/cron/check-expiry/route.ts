@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
                         docTitle: doc.title,
                     });
 
-                    errorDetails.push(`${doc.title}: ${pushError.message || 'Unknown error'}`);
+                    errorDetails.push(`${doc.title}: ${pushError.message || 'Unknown error'} (HTTP ${pushError.statusCode || 'N/A'})`);
                     errorCount++;
 
                     // Remove invalid subscription (410 Gone or 404 Not Found)
