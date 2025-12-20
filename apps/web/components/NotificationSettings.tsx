@@ -132,7 +132,6 @@ export function NotificationSettings() {
                     body: 'Les notifications fonctionnent parfaitement !',
                     icon: '/icons/icon-192.png',
                     badge: '/icons/icon-72.png',
-                    vibrate: [100, 50, 100],
                     data: { url: '/' },
                 });
                 showToast('Notification de test envoyée !', 'success');
@@ -160,7 +159,11 @@ export function NotificationSettings() {
         return outputArray;
     }
 
-    // Don't render until client-side, or if push not supported
+    // Detect iOS
+    const isIOS = isClient && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = isClient && (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
+
+    // Don't render until client-side
     if (!isClient) {
         return (
             <div className="notification-settings">
@@ -169,6 +172,41 @@ export function NotificationSettings() {
                     <div className="notification-settings-info">
                         <h3>Notifications</h3>
                         <p>Chargement...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // iOS-specific message
+    if (isIOS && !isStandalone) {
+        return (
+            <div className="notification-settings">
+                <div className="notification-settings-header">
+                    <span className="notification-icon">🔔</span>
+                    <div className="notification-settings-info">
+                        <h3>Notifications</h3>
+                        <p style={{ color: '#FFA500', fontSize: '0.85rem' }}>
+                            📲 Pour activer les notifications sur iOS, ajoutez l'app à l'écran d'accueil :
+                            Appuyez sur <strong>Partager</strong> → <strong>Sur l'écran d'accueil</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // iOS in standalone mode but notifications not supported (iOS < 16.4)
+    if (isIOS && isStandalone && (!('Notification' in window) || !('PushManager' in window))) {
+        return (
+            <div className="notification-settings">
+                <div className="notification-settings-header">
+                    <span className="notification-icon">🔔</span>
+                    <div className="notification-settings-info">
+                        <h3>Notifications</h3>
+                        <p style={{ color: '#FF6B6B', fontSize: '0.85rem' }}>
+                            ⚠️ Les notifications nécessitent iOS 16.4 ou supérieur. Mettez à jour votre appareil.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -195,14 +233,14 @@ export function NotificationSettings() {
                     <div className="notification-blocked">
                         <span>⚠️ Bloquées dans le navigateur</span>
                     </div>
-                ) : isSubscribed ? (
+                ) : permission === 'granted' ? (
                     <div className="notification-buttons">
                         <button
                             className="notification-toggle active"
-                            onClick={unsubscribeFromPush}
+                            onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
                             disabled={isLoading}
                         >
-                            {isLoading ? '⏳' : '✓'} Activées
+                            {isLoading ? '⏳' : isSubscribed ? '✓' : '🔔'} {isSubscribed ? 'Activées' : 'Activer'}
                         </button>
                         <button
                             className="notification-test-btn"
