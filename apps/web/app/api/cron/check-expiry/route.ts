@@ -127,8 +127,8 @@ export async function GET(request: NextRequest) {
                     errorDetails.push(`${doc.title}: ${pushError.message || 'Unknown error'} (HTTP ${pushError.statusCode || 'N/A'})`);
                     errorCount++;
 
-                    // Remove invalid subscription (410 Gone or 404 Not Found)
-                    if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+                    // Remove invalid subscription (410 Gone, 404 Not Found, or 403 Forbidden)
+                    if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
                         await getSupabase()
                             .from('push_subscriptions')
                             .delete()
