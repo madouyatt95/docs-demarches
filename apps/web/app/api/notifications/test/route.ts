@@ -26,22 +26,56 @@ export async function POST(request: NextRequest) {
 
         const sub = subscriptions[0];
 
+        // Configure web-push
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+        if (!vapidPublicKey || !vapidPrivateKey) {
+            return NextResponse.json({
+                error: 'VAPID keys not configured in server environment',
+                success: false
+            });
+        }
+
+        webpush.setVapidDetails(
+            'mailto:contact@docsbox.app',
+            vapidPublicKey,
+            vapidPrivateKey
+        );
+
         // Create a simple notification payload
         const payload = JSON.stringify({
             title: '🔔 Test DocsBox',
-            body: 'Les notifications fonctionnent !',
+            body: 'Les notifications fonctionnent parfaitement !',
             icon: '/icons/icon-192.png',
+            badge: '/icons/icon-72.png',
             data: { url: '/' },
         });
 
-        // Call the check-expiry endpoint to use its sendWebPush function
-        // For now, just verify the subscription exists
-        return NextResponse.json({
-            success: true,
-            message: 'Abonnement trouvé. Les notifications sont configurées.',
-            endpoint: sub.endpoint.substring(0, 50) + '...',
-            hasKeys: !!sub.keys,
-        });
+        // Send notification
+        const pushSubscription = {
+            endpoint: sub.endpoint,
+            keys: {
+                p256dh: (sub.keys as any)?.p256dh || (sub.keys as any)?.['p256dh'],
+                auth: (sub.keys as any)?.auth || (sub.keys as any)?.['auth'],
+            }
+        };
+
+        try {
+            await webpush.sendNotification(pushSubscription, payload);
+            return NextResponse.json({
+                success: true,
+                message: 'Notification de test envoyée !',
+                endpoint: sub.endpoint.substring(0, 50) + '...',
+            });
+        } catch (pushError: any) {
+            console.error('Push error:', pushError);
+            return NextResponse.json({
+                error: `Erreur d'envoi: ${pushError.message}`,
+                success: false,
+                statusCode: pushError.statusCode
+            }, { status: 500 });
+        }
     } catch (error) {
         console.error('Test notification error:', error);
         return NextResponse.json(
