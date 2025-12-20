@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import webpush from 'web-push';
 
 export const dynamic = 'force-dynamic';
 
