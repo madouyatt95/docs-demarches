@@ -12,9 +12,11 @@ export async function GET(request: NextRequest) {
             time: new Date().toISOString(),
         },
         env: {
-            NEXT_PUBLIC_VAPID_PUBLIC_KEY: vapidPublic ? `${vapidPublic.substring(0, 10)}...` : 'MISSING',
+            NEXT_PUBLIC_VAPID_PUBLIC_KEY: vapidPublic ? `${vapidPublic.substring(0, 5)}...${vapidPublic.slice(-3)}` : 'MISSING',
+            VAPID_PUBLIC_LENGTH: vapidPublic ? vapidPublic.length : 0,
             VAPID_PRIVATE_KEY_PRESENT: !!vapidPrivate,
-            VAPID_PRIVATE_KEY_START: vapidPrivate ? `${vapidPrivate.substring(0, 5)}...` : 'N/A',
+            VAPID_PRIVATE_KEY_CHECK: vapidPrivate ? `${vapidPrivate.substring(0, 5)}...${vapidPrivate.slice(-3)}` : 'N/A',
+            VAPID_PRIVATE_LENGTH: vapidPrivate ? vapidPrivate.length : 0
         }
     });
 }
