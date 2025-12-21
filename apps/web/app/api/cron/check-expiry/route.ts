@@ -41,12 +41,17 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Configure web-push with VAPID details
-        webpush.setVapidDetails(
-            'mailto:contact@docsbox.app',
-            vapidPublicKey,
-            vapidPrivateKey
-        );
+        const vapidOptions = {
+            vapidDetails: {
+                subject: 'mailto:contact@docsbox.app',
+                publicKey: vapidPublicKey.trim(),
+                privateKey: vapidPrivateKey.trim()
+            }
+        };
+
+        let sentCount = 0;
+        let errorCount = 0;
+        const logs: string[] = [];
 
         // Get all documents with expiration dates
         const { data: documents, error: docsError } = await getSupabase()
@@ -86,10 +91,6 @@ export async function GET(request: NextRequest) {
                 sent: 0
             });
         }
-
-        let sentCount = 0;
-        let errorCount = 0;
-        const logs: string[] = [];
 
         // Send notifications for each expiring document
         for (const doc of expiringDocs) {
@@ -136,16 +137,16 @@ export async function GET(request: NextRequest) {
                         continue;
                     }
 
-                    await webpush.sendNotification(pushSubscription, payload);
+                    await webpush.sendNotification(pushSubscription, payload, vapidOptions);
                     sentCount++;
                     logs.push(`Sent to user ${doc.userId} for ${doc.title}`);
                 } catch (pushError: any) {
-                    console.error('Push error:', pushError);
+                    console.error('Push error details:', pushError);
                     errorCount++;
                     const statusCode = pushError.statusCode || 'N/A';
                     let errorDetail = pushError.message || 'Unknown error';
                     if (pushError.body) {
-                        errorDetail += ` (Body: ${pushError.body.substring(0, 100)})`;
+                        errorDetail += ` (Body: ${pushError.body.trim()})`;
                     }
 
                     logs.push(`Error ${statusCode} for ${doc.userId}: ${errorDetail}`);
