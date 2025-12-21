@@ -41,13 +41,12 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        const vapidOptions = {
-            vapidDetails: {
-                subject: 'mailto:contact@docsbox.app',
-                publicKey: vapidPublicKey.trim(),
-                privateKey: vapidPrivateKey.trim()
-            }
-        };
+        // Configure web-push with VAPID details
+        webpush.setVapidDetails(
+            'mailto:contact@docsbox.app',
+            vapidPublicKey,
+            vapidPrivateKey
+        );
 
         let sentCount = 0;
         let errorCount = 0;
@@ -137,7 +136,7 @@ export async function GET(request: NextRequest) {
                         continue;
                     }
 
-                    await webpush.sendNotification(pushSubscription, payload, vapidOptions);
+                    await webpush.sendNotification(pushSubscription, payload);
                     sentCount++;
                     logs.push(`Sent to user ${doc.userId} for ${doc.title}`);
                 } catch (pushError: any) {
