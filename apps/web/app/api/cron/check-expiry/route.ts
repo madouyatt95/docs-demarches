@@ -41,12 +41,7 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Configure web-push with VAPID details
-        webpush.setVapidDetails(
-            'mailto:contact@docsbox.app',
-            vapidPublicKey,
-            vapidPrivateKey
-        );
+
 
         let sentCount = 0;
         let errorCount = 0;
@@ -91,6 +86,9 @@ export async function GET(request: NextRequest) {
             });
         }
 
+        // Use unified utility
+        const { sendPushNotification } = await import('@/lib/push');
+
         // Send notifications for each expiring document
         for (const doc of expiringDocs) {
             const days = daysUntil(doc.expirationDate);
@@ -103,40 +101,19 @@ export async function GET(request: NextRequest) {
                 continue;
             }
 
-            const payload = JSON.stringify({
+            const payload = {
                 title: 'DocsBox - Alerte expiration',
                 body: days < 0
                     ? `"${doc.title}" a expiré il y a ${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''} !`
                     : days === 0
                         ? `"${doc.title}" expire aujourd'hui !`
                         : `"${doc.title}" expire dans ${days} jour${days > 1 ? 's' : ''}`,
-                icon: '/icons/icon-192.png',
-                badge: '/icons/icon-72.png',
                 data: { url: '/' },
-            });
+            };
 
             for (const sub of userSubscriptions) {
                 try {
-                    // Safe key extraction
-                    let keys = sub.keys;
-                    if (typeof keys === 'string') {
-                        try { keys = JSON.parse(keys); } catch (e) { }
-                    }
-
-                    const pushSubscription = {
-                        endpoint: sub.endpoint,
-                        keys: {
-                            p256dh: keys?.p256dh || keys?.['p256dh'],
-                            auth: keys?.auth || keys?.['auth'],
-                        }
-                    };
-
-                    if (!pushSubscription.keys.p256dh || !pushSubscription.keys.auth) {
-                        logs.push(`Missing keys for user ${doc.userId}`);
-                        continue;
-                    }
-
-                    await webpush.sendNotification(pushSubscription, payload);
+                    await sendPushNotification(sub, payload);
                     sentCount++;
                     logs.push(`Sent to user ${doc.userId} for ${doc.title}`);
                 } catch (pushError: any) {
@@ -145,7 +122,12 @@ export async function GET(request: NextRequest) {
                     const statusCode = pushError.statusCode || 'N/A';
                     let errorDetail = pushError.message || 'Unknown error';
                     if (pushError.body) {
-                        errorDetail += ` (Body: ${pushError.body.trim()})`;
+                        try {
+                            const body = JSON.parse(pushError.body);
+                            errorDetail += ` (Reason: ${body.reason || pushError.body})`;
+                        } catch (e) {
+                            errorDetail += ` (Body: ${pushError.body.trim()})`;
+                        }
                     }
 
                     logs.push(`Error ${statusCode} for ${doc.userId}: ${errorDetail}`);

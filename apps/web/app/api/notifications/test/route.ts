@@ -38,32 +38,15 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        webpush.setVapidDetails(
-            'mailto:contact@docsbox.app',
-            vapidPublicKey,
-            vapidPrivateKey
-        );
-
-        // Create a simple notification payload
-        const payload = JSON.stringify({
-            title: '🔔 Test DocsBox',
-            body: 'Les notifications fonctionnent parfaitement !',
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-72.png',
-            data: { url: '/' },
-        });
-
-        // Send notification
-        const pushSubscription = {
-            endpoint: sub.endpoint,
-            keys: {
-                p256dh: (sub.keys as any)?.p256dh || (sub.keys as any)?.['p256dh'],
-                auth: (sub.keys as any)?.auth || (sub.keys as any)?.['auth'],
-            }
-        };
+        // Use unified utility
+        const { sendPushNotification } = await import('@/lib/push');
 
         try {
-            await webpush.sendNotification(pushSubscription, payload);
+            await sendPushNotification(sub, {
+                title: '🔔 Test DocsBox',
+                body: 'Les notifications fonctionnent parfaitement !',
+                data: { url: '/' },
+            });
             return NextResponse.json({
                 version: '1.0.3',
                 success: true,
