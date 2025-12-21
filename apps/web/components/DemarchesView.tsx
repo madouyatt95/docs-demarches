@@ -186,8 +186,9 @@ export function DemarchesView() {
             if (!res.ok) throw new Error('Erreur création');
             setShowCreateModal(false);
             fetchDemarches();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Create demarche error:', err);
+            setError(err.message || 'Erreur lors de la création de la démarche');
         }
     };
 

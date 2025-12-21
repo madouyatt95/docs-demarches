@@ -81,8 +81,9 @@ export function PacksView() {
             setPackName('');
             setSelectedTemplate(null);
             fetchPacks();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Create pack error:', err);
+            setError(err.message || 'Erreur lors de la création du pack');
         } finally {
             setIsCreating(false);
         }
@@ -131,8 +132,9 @@ export function PacksView() {
 
             if (!res.ok) throw new Error('Erreur suppression pack');
             fetchPacks();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Delete pack error:', err);
+            setError(err.message || 'Erreur lors de la suppression du pack');
         } finally {
             setIsDeleting(null);
         }

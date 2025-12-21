@@ -4,7 +4,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { DocumentsView } from '@/components/DocumentsView';
 import { Sidebar } from '@/components/Sidebar';
 import { AddDocumentModal } from '@/components/AddDocumentModal';
@@ -15,12 +17,35 @@ import { MobileNav } from '@/components/MobileNav';
 import { usePremium } from '@/lib/premium-context';
 
 export default function HomePage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const { isPremium } = usePremium();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showScannerModal, setShowScannerModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [showPremiumGate, setShowPremiumGate] = useState(false);
     const [premiumFeature, setPremiumFeature] = useState('');
+
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/login');
+        }
+    }, [status, router]);
+
+    // Show loading while checking auth
+    if (status === 'loading') {
+        return (
+            <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="loading-spinner"></div>
+            </div>
+        );
+    }
+
+    // Don't render if not authenticated
+    if (status === 'unauthenticated') {
+        return null;
+    }
 
     const openAddModal = () => setShowAddModal(true);
 

@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate the public share URL
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://docs-demarches-web-9tbb.vercel.app';
+        const host = request.headers.get('host');
+        const protocol = host?.includes('localhost') ? 'http' : 'https';
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
         const shareUrl = `${baseUrl}/share/${token}`;
 
         return NextResponse.json({

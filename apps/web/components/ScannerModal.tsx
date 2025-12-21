@@ -6,6 +6,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Tesseract from 'tesseract.js';
+import { usePremium } from '@/lib/premium-context';
 
 interface ScannerModalProps {
     isOpen: boolean;
@@ -39,10 +40,10 @@ export function ScannerModal({ isOpen, onClose, onSuccess }: ScannerModalProps) 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Enhanced detection state
+    const { isPremium } = usePremium();
     const [enhancedResult, setEnhancedResult] = useState<EnhancedScanResult | null>(null);
     const [scanUsage, setScanUsage] = useState<ScanUsage | null>(null);
     const [isEnhancing, setIsEnhancing] = useState(false);
-    const [isPremium] = useState(false); // TODO: Set to true when Mindee feature is ready
 
     // AI classification state
     const [aiClassification, setAiClassification] = useState<{
