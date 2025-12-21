@@ -3,6 +3,8 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Mindee API endpoint
 const MINDEE_API_URL = 'https://api.mindee.net/v1/products/mindee/docti/v1/predict';
@@ -14,6 +16,10 @@ interface MindeeResponse {
 }
 
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
     try {
         const apiKey = process.env.MINDEE_API_KEY;
 

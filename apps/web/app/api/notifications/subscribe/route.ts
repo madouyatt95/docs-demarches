@@ -5,13 +5,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 // POST: Subscribe to push notifications
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+
     try {
-        const { subscription, userId = 'demo_user' } = await request.json();
+        const { subscription } = await request.json();
 
         if (!subscription || !subscription.endpoint) {
             return NextResponse.json(
@@ -57,8 +66,15 @@ export async function POST(request: NextRequest) {
 
 // DELETE: Unsubscribe from push notifications
 export async function DELETE(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+
     try {
-        const { endpoint, userId = 'demo_user' } = await request.json();
+        const { endpoint } = await request.json();
 
         const { error } = await getSupabase()
             .from('push_subscriptions')

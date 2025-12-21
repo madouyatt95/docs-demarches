@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 import crypto from 'crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -16,15 +18,38 @@ function generateToken(): string {
 
 // POST /api/share - Create a new share link
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
         const { documentId, packId, expirationDays = 7, password } = body;
 
-        if (!documentId && !packId) {
-            return NextResponse.json(
-                { error: 'documentId or packId is required' },
-                { status: 400 }
-            );
+        // Verify ownership
+        if (documentId) {
+            const { data: doc, error: docError } = await getSupabase()
+                .from('documents')
+                .select('id')
+                .eq('id', documentId)
+                .eq('userId', (session.user as any).id)
+                .single();
+
+            if (docError || !doc) {
+                return NextResponse.json({ error: 'Document non trouvé ou accès refusé' }, { status: 403 });
+            }
+        } else if (packId) {
+            const { data: pack, error: packError } = await getSupabase()
+                .from('packs')
+                .select('id')
+                .eq('id', packId)
+                .eq('userId', (session.user as any).id)
+                .single();
+
+            if (packError || !pack) {
+                return NextResponse.json({ error: 'Pack non trouvé ou accès refusé' }, { status: 403 });
+            }
         }
 
         const token = generateToken();
@@ -79,6 +104,7 @@ export async function POST(request: NextRequest) {
 
 // GET /api/share?token=xxx - Get share link details and document
 export async function GET(request: NextRequest) {
+    // PUBLIC ACCESS (with token/password)
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
     const password = searchParams.get('password');
@@ -108,7 +134,7 @@ export async function GET(request: NextRequest) {
                 { status: 404 }
             );
         }
-
+        // ... (rest of the file remains same, keeping tokens and expiration checks)
         // Check expiration
         if (shareLink.expiresAt && new Date(shareLink.expiresAt) < new Date()) {
             return NextResponse.json(

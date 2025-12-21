@@ -1,8 +1,6 @@
-// ============================================
-// DOCSBOX WEB - Enhanced Scans Tracking API
-// ============================================
-
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // In-memory storage for demo (in production, use database)
 // Key: simulated user ID, Value: { count: number, resetAt: Date }
@@ -10,12 +8,8 @@ const userScansMap = new Map<string, { count: number; resetAt: Date }>();
 
 const MAX_SCANS_PER_MONTH = 5;
 
-function getUserId(request: NextRequest): string {
-    // In production, get from session/auth
-    // For demo, use a cookie or generate one
-    const cookies = request.cookies;
-    return cookies.get('userId')?.value || 'demo-user';
-}
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 function getMonthStart(): Date {
     const now = new Date();
@@ -27,8 +21,14 @@ function shouldReset(resetAt: Date): boolean {
 }
 
 export async function GET(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+
     try {
-        const userId = getUserId(request);
         const userData = userScansMap.get(userId);
 
         if (!userData || shouldReset(userData.resetAt)) {
@@ -61,8 +61,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+
     try {
-        const userId = getUserId(request);
         let userData = userScansMap.get(userId);
 
         // Reset if needed

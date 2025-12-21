@@ -5,12 +5,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 import { randomUUID } from 'crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 // POST /api/upload - Upload a file to Supabase Storage
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File;

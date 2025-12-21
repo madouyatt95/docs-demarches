@@ -3,6 +3,8 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,11 @@ const typeLabels: Record<string, string> = {
 
 // GET /api/services/nearby?postalCode=75001&type=mairie
 export async function GET(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'mairie';
     const postalCode = searchParams.get('postalCode') || '';

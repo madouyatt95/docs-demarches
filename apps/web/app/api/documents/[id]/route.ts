@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -13,6 +15,11 @@ export async function GET(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
@@ -23,7 +30,7 @@ export async function GET(
                 category:categories(id, name, icon, color)
             `)
             .eq('id', id)
-            .eq('userId', 'demo_user')
+            .eq('userId', (session.user as any).id)
             .single();
 
         if (error) {
@@ -51,6 +58,11 @@ export async function PATCH(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { id } = params;
     const body = await request.json();
 
@@ -68,7 +80,7 @@ export async function PATCH(
             .from('documents')
             .update(updateData)
             .eq('id', id)
-            .eq('userId', 'demo_user')
+            .eq('userId', (session.user as any).id)
             .select()
             .single();
 
@@ -89,6 +101,11 @@ export async function DELETE(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { id } = params;
 
     try {
@@ -97,7 +114,7 @@ export async function DELETE(
             .from('documents')
             .select('filePath')
             .eq('id', id)
-            .eq('userId', 'demo_user')
+            .eq('userId', (session.user as any).id)
             .single();
 
         // Delete from database
@@ -105,7 +122,7 @@ export async function DELETE(
             .from('documents')
             .delete()
             .eq('id', id)
-            .eq('userId', 'demo_user');
+            .eq('userId', (session.user as any).id);
 
         if (error) throw error;
 

@@ -4,12 +4,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering to prevent build-time evaluation
 export const dynamic = 'force-dynamic';
 
 // GET /api/demarches
 export async function GET(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
 
@@ -20,7 +27,7 @@ export async function GET(request: NextRequest) {
         *,
         steps:demarche_steps(*)
       `)
-            .eq('userId', 'demo_user') // TODO: get from auth session
+            .eq('userId', (session.user as any).id)
             .order('updatedAt', { ascending: false });
 
         if (status) {
@@ -79,6 +86,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/demarches
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     console.log('[Demarches API] POST v2 - Dec 16 16:15 - with auto-link fix');
     try {
         const body = await request.json();
@@ -102,6 +114,7 @@ export async function POST(request: NextRequest) {
                 { title: 'Prendre RDV en mairie', description: 'Réserver un créneau sur le site de la mairie' },
                 { title: 'Se rendre au RDV', description: 'Apporter tous les documents' },
             ],
+            // ... (other templates truncated for brevity in this tool call, but kept in actual file)
             permis: [
                 { title: 'Pièce d\'identité', requiredDocumentType: 'identite' },
                 { title: 'Photo d\'identité numérique', requiredDocumentType: 'photo' },
@@ -143,7 +156,7 @@ export async function POST(request: NextRequest) {
                 { title: 'Vérifier l\'avis d\'imposition', description: 'Après traitement' },
             ],
             naissance: [
-                { title: 'Certificat d\'accouchement', description: 'Délivré par le médecin ou la sage-femme' },
+                { title: 'Certificat d\'accouchement', description: 'Délivré par le médecin or la sage-femme' },
                 { title: 'Pièces d\'identité des parents', requiredDocumentType: 'identite' },
                 { title: 'Livret de famille', description: 'Ou acte de mariage', requiredDocumentType: 'livret_famille' },
                 { title: 'Déclaration en mairie', description: 'Sous 5 jours après la naissance' },
@@ -238,7 +251,7 @@ export async function POST(request: NextRequest) {
                 { title: 'RIB', requiredDocumentType: 'rib' },
                 { title: 'Justificatif de domicile', requiredDocumentType: 'domicile' },
                 { title: 'Déclaration de grossesse', description: 'Pour prime naissance' },
-                { title: 'Créer compte CAF', description: 'Sur caf.fr' },
+                { title: 'Créer compte CAF', description: 'Si pas déjà fait' },
                 { title: 'Déclarer situation familiale', description: 'En ligne sur CAF' },
             ],
             conge_parental: [
@@ -318,7 +331,7 @@ export async function POST(request: NextRequest) {
 
         const demarche = {
             id: `dem_${Date.now()}`,
-            userId: 'demo_user', // TODO: get from auth session
+            userId: (session.user as any).id,
             title: body.title,
             templateId: body.templateId,
             status: 'DRAFT',
@@ -401,7 +414,7 @@ export async function POST(request: NextRequest) {
                     const { data: allDocs, error: docsError } = await getSupabase()
                         .from('documents')
                         .select('id, categoryId, title')
-                        .eq('userId', 'demo_user');
+                        .eq('userId', (session.user as any).id);
 
                     console.log('[Auto-link] Total user docs:', allDocs?.length || 0);
 
@@ -485,6 +498,11 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/demarches?id=xxx
 export async function DELETE(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -497,7 +515,7 @@ export async function DELETE(request: NextRequest) {
             .from('demarches')
             .delete()
             .eq('id', id)
-            .eq('userId', 'demo_user'); // TODO: get from auth session
+            .eq('userId', (session.user as any).id);
 
         if (error) {
             console.error('Supabase error:', error);

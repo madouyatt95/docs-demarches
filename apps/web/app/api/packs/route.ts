@@ -4,12 +4,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering to prevent build-time evaluation
 export const dynamic = 'force-dynamic';
 
 // GET /api/packs
 export async function GET(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
 
@@ -20,7 +27,7 @@ export async function GET(request: NextRequest) {
         *,
         documents:pack_documents(count)
       `)
-            .eq('userId', 'demo_user') // TODO: get from auth session
+            .eq('userId', (session.user as any).id)
             .order('updatedAt', { ascending: false });
 
         if (search) {
@@ -59,12 +66,17 @@ export async function GET(request: NextRequest) {
 
 // POST /api/packs
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
 
         const pack = {
             id: `pack_${Date.now()}`,
-            userId: 'demo_user', // TODO: get from auth session
+            userId: (session.user as any).id,
             name: body.name,
             templateId: body.templateId || null,
             createdAt: new Date().toISOString(),
@@ -97,6 +109,11 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/packs - Update a pack
 export async function PUT(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
         const { id, name, templateId } = body;
@@ -113,7 +130,7 @@ export async function PUT(request: NextRequest) {
                 updatedAt: new Date().toISOString(),
             })
             .eq('id', id)
-            .eq('userId', 'demo_user') // TODO: get from auth session
+            .eq('userId', (session.user as any).id)
             .select()
             .single();
 
@@ -134,6 +151,11 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/packs?id=xxx
 export async function DELETE(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -146,7 +168,7 @@ export async function DELETE(request: NextRequest) {
             .from('packs')
             .delete()
             .eq('id', id)
-            .eq('userId', 'demo_user'); // TODO: get from auth session
+            .eq('userId', (session.user as any).id);
 
         if (error) {
             console.error('Supabase error:', error);

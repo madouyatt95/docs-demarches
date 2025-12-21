@@ -4,17 +4,33 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering to prevent build-time evaluation
 export const dynamic = 'force-dynamic';
 
 // GET /api/categories
 export async function GET() {
+    const session = await getServerSession(authOptions);
+    // Categories can be public (system categories) but usually better to have a session
+    const userId = session?.user ? (session.user as any).id : null;
+
     try {
-        const { data, error } = await getSupabase()
+        let query = getSupabase()
             .from('categories')
             .select('*')
             .order('sortOrder', { ascending: true });
+
+        if (userId) {
+            // Get system categories (userId is null) OR user-specific categories
+            query = query.or(`userId.is.null,userId.eq.${userId}`);
+        } else {
+            // If no session, only show system categories
+            query = query.is('userId', null);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Supabase error:', error);
@@ -33,12 +49,17 @@ export async function GET() {
 
 // POST /api/categories (for custom categories)
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
 
         const category = {
             id: `cat_${Date.now()}`,
-            userId: 'demo_user', // TODO: get from auth session
+            userId: (session.user as any).id,
             name: body.name,
             icon: body.icon || '📁',
             color: body.color || '#6B7280',

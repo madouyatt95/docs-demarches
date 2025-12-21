@@ -4,6 +4,8 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
@@ -109,8 +111,14 @@ Réponds UNIQUEMENT au format JSON suivant, sans aucun texte avant ou après :
 }
 
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         const { text } = await request.json();
+        // ... (rest of the logic)
 
         if (!text || typeof text !== 'string') {
             return NextResponse.json(

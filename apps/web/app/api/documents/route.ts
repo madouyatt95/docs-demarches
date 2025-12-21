@@ -4,12 +4,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Force dynamic rendering to prevent build-time evaluation
 export const dynamic = 'force-dynamic';
 
 // GET /api/documents
 export async function GET(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const categoryFilter = searchParams.get('category');
     const search = searchParams.get('search');
@@ -25,7 +32,7 @@ export async function GET(request: NextRequest) {
         *,
         category:categories(id, name, icon, color)
       `, { count: 'exact' })
-            .eq('userId', 'demo_user') // TODO: get from auth session
+            .eq('userId', (session.user as any).id)
             .order('updatedAt', { ascending: false })
             .range(offset, offset + limit - 1);
 
@@ -63,12 +70,17 @@ export async function GET(request: NextRequest) {
 
 // POST /api/documents
 export async function POST(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
 
         const document = {
             id: `doc_${Date.now()}`,
-            userId: 'demo_user', // TODO: get from auth session
+            userId: (session.user as any).id,
             title: body.title,
             categoryId: body.categoryId || null,
             filePath: body.filePath || '/uploads/temp.pdf',
@@ -116,10 +128,11 @@ export async function POST(request: NextRequest) {
 
                 const matchingTypes = categoryToTypeMap[documentType] || [documentType];
 
-                // Find all unlinked, uncompleted steps that require one of these types
+                // Find all unlinked, uncompleted steps for THIS user that require one of these types
                 const { data: matchingSteps } = await getSupabase()
                     .from('demarche_steps')
-                    .select('id, demarcheId, requiredDocumentType')
+                    .select('id, demarche!inner(userId), requiredDocumentType')
+                    .eq('demarche.userId', (session.user as any).id)
                     .in('requiredDocumentType', matchingTypes)
                     .is('documentId', null)
                     .eq('isCompleted', false);
@@ -159,6 +172,11 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/documents?id=xxx
 export async function DELETE(request: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -171,7 +189,7 @@ export async function DELETE(request: NextRequest) {
             .from('documents')
             .delete()
             .eq('id', id)
-            .eq('userId', 'demo_user'); // TODO: get from auth session
+            .eq('userId', (session.user as any).id);
 
         if (error) {
             console.error('Supabase error:', error);
